@@ -1,0 +1,33 @@
+{
+  "n_pairs": 150,
+  "n_answers": 300,
+  "seed": 42,
+  "answer_format": "code only (last fenced block)",
+  "difficulty": {
+    "easy": 50,
+    "medium": 50,
+    "hard": 50
+  },
+  "platform": {
+    "atcoder": 71,
+    "leetcode": 78,
+    "codeforces": 1
+  },
+  "source_split": {
+    "gemini_2.5_pro": 10,
+    "gemini_2.5_flash_lite": 28,
+    "claude_4_opus": 14,
+    "gemini_2.5_flash": 36,
+    "claude_3.7_sonnet": 30,
+    "claude_4_sonnet": 18,
+    "qwen3_235b": 14
+  },
+  "avg_lines_correct": 64.8,
+  "avg_lines_incorrect": 65.3,
+  "avg_chars_problem": 1555,
+  "pool": {
+    "raw_pairs": 2103,
+    "dropped_no_code": 0,
+    "distinct_questions": 676
+  }
+}
