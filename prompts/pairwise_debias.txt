@@ -1,0 +1,16 @@
+You are given a programming problem and two candidate solutions, Answer A and Answer B.
+Exactly one of them is correct (passes all hidden unit tests).
+Important: the order in which the answers appear is random and carries no information.
+Do not prefer an answer because it comes first or second, or because it is longer, has more
+comments, or looks more polished. Judge only whether the logic solves the problem for all inputs.
+
+### Problem
+{problem}
+
+### Answer A
+{answer_a}
+
+### Answer B
+{answer_b}
+
+Which answer is correct? Output only a single letter: A or B.

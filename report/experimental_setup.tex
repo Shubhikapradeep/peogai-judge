@@ -1,0 +1,52 @@
+% ---- IV. Experimental Setup (P1) -- target ~0.5 page ----
+% Fill every \tbd{} from `python -m src.setup_summary` and the smoke-test notes.
+\newcommand{\tbd}[1]{\textcolor{red}{[#1]}}
+
+\section{Experimental Setup}
+\label{sec:setup}
+
+\textbf{Hardware.} All batch experiments ran on Google Colab with a single NVIDIA \tbd{T4, 16\,GB} GPU
+(\tbd{Kaggle P100/T4 was used for \emph{N} sessions when Colab had no GPU free}). The live demo runs
+Qwen2.5-Coder-3B-Instruct locally on an Apple MacBook Pro (M3 Pro) through Ollama
+(\tbd{Q4\_K\_M} GGUF build), with no GPU server.
+
+\textbf{Models.} We evaluate two open-weight judges from the same family so that scale is the only
+variable: Qwen2.5-Coder-3B-Instruct in fp16 and Qwen2.5-Coder-7B-Instruct in 4-bit
+(\tbd{AWQ via vLLM \emph{or} NF4 via bitsandbytes}). Inference used \tbd{vLLM \emph{x.y} / Hugging Face
+Transformers \emph{x.y}}. Inputs use each model's chat template with a fixed system message, and the context window is capped at \tbd{8{,}192} tokens.
+\tbd{\emph{k}} of 150 problems exceeded this cap and were truncated.
+
+\textbf{Decoding.} Experiments 1, 2, 3 and 4b use greedy decoding (temperature 0). Experiment 4c samples three
+completions at temperature 0.7 (top-$p$ 0.95, seed 42) and takes the majority verdict. Output is limited to
+16 new tokens because every prompt asks for a single token (\texttt{A}/\texttt{B} or
+\texttt{correct}/\texttt{incorrect}). A rule-based parser maps outputs to verdicts. Outputs it cannot map
+are counted as parse failures and scored as wrong, not dropped.
+
+\textbf{Order control.} Every pairwise item is judged twice, once with the correct answer as A and once
+as B. The data therefore have no built-in order bias, and position bias can be measured directly.
+
+\textbf{Scale and cost.} Table~\ref{tab:runs} lists the runs. In total we made \tbd{N} judge calls
+(\tbd{M} generations including the 3$\times$ samples of Exp.~4c) in \tbd{H} GPU-hours. The mean latency
+per call was \tbd{x.xx}\,s for the 3B model and \tbd{x.xx}\,s for the 7B model. The runner writes
+results to persistent storage after every 10 calls and resumes after interruptions. A run that
+spanned several sessions therefore still covers every item exactly once.
+
+\begin{table}[t]
+\centering
+\caption{Judge runs. Calls count both orders for pairwise experiments.}
+\label{tab:runs}
+\begin{tabular}{llrrr}
+\hline
+Exp. & Judge & Calls & Time (min) & s/call \\
+\hline
+1 Pairwise        & 3B & 300 & \tbd{} & \tbd{} \\
+1 Pairwise        & 7B & 300 & \tbd{} & \tbd{} \\
+3 Pointwise       & 3B & 300 & \tbd{} & \tbd{} \\
+3 Pointwise       & 7B & 300 & \tbd{} & \tbd{} \\
+4b Debias prompt  & 3B & 300 & \tbd{} & \tbd{} \\
+4b Debias prompt  & 7B & 300 & \tbd{} & \tbd{} \\
+4c Vote@3         & 3B & 300 ($\times$3) & \tbd{} & \tbd{} \\
+2 Verbosity       & 3B & 300 & \tbd{} & \tbd{} \\
+\hline
+\end{tabular}
+\end{table}

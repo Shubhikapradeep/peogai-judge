@@ -1,0 +1,10 @@
+You are given a programming problem and one candidate solution.
+Decide whether the solution is correct, i.e. it would pass all hidden unit tests.
+
+### Problem
+{problem}
+
+### Candidate solution
+{code}
+
+Output only one word: correct or incorrect.
