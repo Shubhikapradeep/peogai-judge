@@ -100,8 +100,12 @@ def main():
     print(f"dropped {no_code} pairs without a fenced code block; {len(per_q)} distinct questions left")
 
     by_level = defaultdict(list)
+    # Stratify on the difficulty label of the row we actually pick. The same question can carry
+    # different labels in different splits (e.g. LeetCode 2839 is easy/hard/medium), so using
+    # another row's label made the saved difficulty disagree with the stratification.
     for qid in sorted(per_q):
-        by_level[(per_q[qid][0][0].get("difficulty") or "unknown").lower()].append(rng.choice(per_q[qid]))
+        pick = rng.choice(per_q[qid])
+        by_level[(pick[0].get("difficulty") or "unknown").lower()].append(pick)
     picked = stratified(by_level, args.n, rng)
     rng.shuffle(picked)
 
