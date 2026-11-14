@@ -1,0 +1,103 @@
+% ---- V. Results (P2) -- target ~2 pages ----
+% Tables and figures come from: python -m src.metrics && python -m src.plots
+% On Overleaf, upload results/tables/*.tex to tables/ and results/figures/*.pdf to figures/.
+% Fill every \tbd{} from results/key_numbers.md. Do not type numbers that are not in that file.
+\providecommand{\tbd}[1]{\textcolor{red}{[#1]}}
+
+\section{Results}
+\label{sec:results}
+
+All percentages are over 150 pairs (300 calls per experiment and model). Brackets give 95\% Wilson
+confidence intervals, and parse failures are scored as wrong. Where two conditions are run on the same
+calls, we compare them with an exact McNemar test.
+
+\subsection{Pairwise judging and position bias (Exp.~1)}
+
+\input{tables/t1_pairwise.tex}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/f1_position_bias.pdf}
+\caption{Pairwise accuracy when the correct answer is shown first (A) or second (B). The dashed line is
+chance. Error bars are 95\% Wilson CIs.}
+\label{fig:position}
+\end{figure}
+
+Table~\ref{tab:t1_pairwise} and Fig.~\ref{fig:position} show that both judges are \tbd{more / less}
+accurate when the correct answer appears as \tbd{A}. For the 3B model, accuracy is \tbd{x}\% with the correct
+answer in position A and \tbd{y}\% in position B, a gap of \tbd{g} percentage points. For the 7B model the gap is
+\tbd{g}. The 3B judge outputs \texttt{A} in \tbd{p}\% of its parsed verdicts, against the 50\% that an unbiased
+judge would produce on this balanced design. Only \tbd{c}\% (3B) and \tbd{c}\% (7B) of pairs receive the same pick in
+both orders. In the remaining pairs the verdict follows the position and not the code: \tbd{AA} pairs got
+\texttt{A} twice and \tbd{BB} got \texttt{B} twice.
+\tbd{One sentence: does the larger model reduce position bias, or only raise accuracy?}
+
+\subsection{Pointwise judging (Exp.~3)}
+
+\input{tables/t2_pointwise.tex}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/f2_pointwise.pdf}
+\caption{Pointwise judging of all 300 answers. FAR: incorrect code accepted. FRR: correct code rejected.}
+\label{fig:pointwise}
+\end{figure}
+
+Judged one answer at a time, the 3B model reaches \tbd{x}\% accuracy and the 7B model \tbd{y}\%
+(Table~\ref{tab:t2_pointwise}). Accuracy alone hides the failure that matters for code auditing.
+The false acceptance rate is \tbd{FAR}\% for 3B and \tbd{FAR}\% for 7B, so \tbd{about k in 10} incorrect solutions
+would pass review. The false rejection rate is only \tbd{FRR}\%. The judges label \tbd{p}\% of all answers
+\texttt{correct}, which shows a leniency bias \tbd{(confirm: is it well above 50\%?)}. Only \tbd{q}\% of pairs
+have both their answers judged right.
+
+\subsection{Effect of the fixes (Exp.~4)}
+
+\input{tables/t3_fixes.tex}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/f3_fixes.pdf}
+\caption{Accuracy (left) and order consistency (right) for the baseline and the three fixes. Order averaging
+is consistent by construction and is scored only on the pairs where both orders agree.}
+\label{fig:fixes}
+\end{figure*}
+
+\textbf{Order averaging (4a)} uses no extra model calls beyond Exp.~1. It keeps a verdict only when both orders agree.
+On those pairs, accuracy rises to \tbd{x}\% (3B) and \tbd{y}\% (7B), but only \tbd{c}\% and \tbd{c}\% of pairs get a
+verdict. The rest are left undecided. \textbf{The debias prompt (4b)} moves the share of \texttt{A} verdicts from \tbd{p}\% to
+\tbd{q}\% (3B), and changes accuracy by \tbd{d} points (McNemar $p=\tbd{}$). \textbf{Majority voting (4c)}
+over three samples at $T{=}0.7$ \tbd{does / does not} improve on greedy decoding (\tbd{x}\% vs.\ \tbd{y}\%,
+$p=\tbd{}$). This suggests the bias is \tbd{systematic, not sampling noise}.
+
+\subsection{Verbosity (Exp.~2)}
+
+\input{tables/t4_verbosity.tex}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/f4_verbosity.pdf}
+\caption{How often the 3B judge picks the incorrect answer before and after that answer is padded with comments
+claiming correctness. The code logic is unchanged (checked by AST equality).}
+\label{fig:verbosity}
+\end{figure}
+
+Adding comments to the incorrect answer, with its logic unchanged, changes how often it wins from
+\tbd{x}\% to \tbd{y}\% (\tbd{+d} points, McNemar $p=\tbd{}$). \tbd{Interpretation: the judge is / is not swayed by
+comments that claim correctness.}
+
+\subsection{By difficulty}
+
+\input{tables/t5_difficulty.tex}
+
+\tbd{One or two sentences on whether accuracy or consistency falls on hard problems. Add the caveat that
+CodeJudgeBench difficulty labels disagree across generator splits for 82\% of the problems that appear in more than
+one split, so this breakdown is indicative only.}
+
+\subsection{Summary of findings}
+\begin{enumerate}
+\item \tbd{Finding 1: position bias (size of the gap, consistency).}
+\item \tbd{Finding 2: pointwise FAR and what it means for auditing.}
+\item \tbd{Finding 3: which fix works, and its cost (coverage or extra calls).}
+\item \tbd{Finding 4: 3B vs 7B.}
+\item \tbd{Finding 5 (if Exp.~2 ran): verbosity.}
+\end{enumerate}
