@@ -5,7 +5,6 @@ Serves an interactive web application on http://localhost:7860 even without Grad
 
 from __future__ import annotations
 
-import cgi
 import http.server
 import json
 import os
