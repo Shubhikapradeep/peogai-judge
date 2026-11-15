@@ -1,0 +1,7 @@
+Model,Difficulty,Exp 1 acc,Exp 1 consistency,Exp 3 acc,Exp 3 FAR
+Qwen2.5-Coder-3B,easy,58.0,16.1,56.6,79.2
+,medium,52.5,10.0,56.0,78.0
+,hard,50.0,7.4,47.9,89.4
+Qwen2.5-Coder-7B (4-bit),easy,58.9,17.9,58.0,70.0
+,medium,52.5,20.0,58.0,72.0
+,hard,47.2,20.4,53.0,74.0
