@@ -104,7 +104,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <option value="3">Example 3 (Consistent Agreement): Server Request Window (p024) ──> [DECIDED]</option>
         <option value="4">Example 4 (Position Bias Flip): Min Absolute Difference (p014) ──> [UNDECIDED]</option>
       </select>
-      <div id="case-info" style="background:#eff6ff; border:1px solid #bfdbfe; border-left:4px solid #2563eb; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:0.88rem; box-shadow:0 1px 2px rgba(0,0,0,0.04);">INIT_INFO</div>
+      <div id="case-info" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">INIT_INFO</div>
 
       <label for="problem">Problem Description</label>
       <textarea id="problem" rows="7">INIT_PROBLEM</textarea>
@@ -253,11 +253,7 @@ function loadCase() {
   document.getElementById('problem').value = ex.problem || '';
   document.getElementById('cand1').value = ex.candidate_1 || '';
   document.getElementById('cand2').value = ex.candidate_2 || '';
-  const infoEl = document.getElementById('case-info');
-  if (infoEl) {
-    infoEl.innerHTML = '<div style="font-weight:700; color:#1e40af; margin-bottom:4px; font-size:0.95rem;">🏷️ Category: ' + ex.category + '</div>' +
-                       '<div style="color:#334155; line-height:1.45;"><strong>Expected:</strong> ' + ex.expected_behavior + '</div>';
-  }
+  document.getElementById('case-info').innerHTML = '<strong>Category:</strong> ' + ex.category + ' | <strong>Expected:</strong> ' + ex.expected_behavior;
 }
 
 function formatMd(text) {
@@ -324,7 +320,7 @@ class DemoHTTPHandler(http.server.BaseHTTPRequestHandler):
             html = html.replace("INIT_PROBLEM", ex0.get("problem", ""))
             html = html.replace("INIT_CAND1", ex0.get("candidate_1", ""))
             html = html.replace("INIT_CAND2", ex0.get("candidate_2", ""))
-            info_str = f'<div style="font-weight:700; color:#1e40af; margin-bottom:4px; font-size:0.95rem;">🏷️ Category: {ex0.get("category", "")}</div><div style="color:#334155; line-height:1.45;"><strong>Expected:</strong> {ex0.get("expected_behavior", "")}</div>'
+            info_str = f"<strong>Category:</strong> {ex0.get('category', '')} | <strong>Expected:</strong> {ex0.get('expected_behavior', '')}"
             html = html.replace("INIT_INFO", info_str)
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
