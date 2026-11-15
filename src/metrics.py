@@ -61,6 +61,14 @@ def mcnemar(a: list[bool], b: list[bool]) -> dict:
     return {"only_a": only_a, "only_b": only_b, "p": min(1.0, 2 * tail)}
 
 
+def binom_two_sided(k: int, n: int, p: float = 0.5) -> float:
+    """Exact two-sided binomial test of k successes in n against rate p (e.g. % A verdicts vs 50%)."""
+    if n == 0:
+        return 1.0
+    probs = [math.comb(n, i) * p ** i * (1 - p) ** (n - i) for i in range(n + 1)]
+    return min(1.0, sum(q for q in probs if q <= probs[k] * (1 + 1e-9)))
+
+
 # ---------------------------------------------------------------- loading
 def load_raw(raw_dir: Path) -> dict:
     """{(exp, model): [rows]} deduplicated by job_id (last row wins)."""
@@ -138,6 +146,11 @@ def pairwise_metrics(rows: list[dict]) -> dict:
         "orderavg_coverage": prop(decided, np_),
         "orderavg_acc_all": prop(cons_right, np_),  # undecided counted as wrong
     })
+    # Is the accuracy gap between orders real? Paired per pair: correct in cf vs correct in cs.
+    full = [p for p in pairs]
+    m["order_test"] = mcnemar([p["cf"]["verdict"] == "A" for p in full],
+                              [p["cs"]["verdict"] == "B" for p in full])
+    m["pct_A_test_p"] = binom_two_sided(m["pct_A"]["k"], m["pct_A"]["n"])
     m["position_gap_pp"] = (100 * (m["acc_cf"]["p"] - m["acc_cs"]["p"])
                             if m["acc_cf"]["p"] is not None and m["acc_cs"]["p"] is not None else None)
     return m
@@ -205,6 +218,10 @@ def compute(raw: dict) -> dict:
         for fix in ("exp4b", "exp4c"):
             if (fix, model) in raw:
                 M["tests"][f"exp1_vs_{fix}_{model}"] = paired(base, raw[(fix, model)], is_right)
+        if model == MODELS[0] and all((e, m_) in raw for e in ("exp1",) for m_ in MODELS):
+            M["tests"]["exp1_3b_vs_7b"] = paired(raw[("exp1", "3b")], raw[("exp1", "7b")], is_right)
+        if model == MODELS[0] and all(("exp3", m_) in raw for m_ in MODELS):
+            M["tests"]["exp3_3b_vs_7b"] = paired(raw[("exp3", "3b")], raw[("exp3", "7b")], is_right)
         # Exp 2: how often the (padded) wrong answer wins
         if ("exp2", model) in raw:
             wins = lambda r: pick(r["order"], r["verdict"]) == "incorrect"
@@ -246,7 +263,7 @@ def write_table(out_dir: Path, name: str, caption: str, header: list[str], rows:
     if note:
         md += ["", f"_{note}_"]
     (out_dir / f"{name}.md").write_text("\n".join(md) + "\n")
-    esc = lambda s: (s.replace("%", r"\%").replace("&", r"\&").replace("_", r"\_")
+    esc = lambda s: (s.replace("->", r"$\rightarrow$").replace("%", r"\%").replace("&", r"\&").replace("_", r"\_")
                       .replace("<", r"$<$").replace("Δ", r"$\Delta$"))
     tex = [r"\begin{table}[t]", r"\centering", r"\caption{" + esc(caption) + "}",
            r"\label{tab:" + name + "}", r"\footnotesize", r"\setlength{\tabcolsep}{3pt}",
@@ -334,13 +351,14 @@ def key_numbers(M: dict) -> str:
         L.append(f"- **{k}**: acc {pct(v['accuracy'], True)}; correct=A {pct(v['acc_cf'])} vs correct=B "
                  f"{pct(v['acc_cs'])} (gap {v['position_gap_pp']:+.1f} pp); consistency {pct(v['consistency'], True)}; "
                  f"%A {pct(v['pct_A'])}; flips AA {v['flip_AA']} / BB {v['flip_BB']} of {v['n_pairs']} pairs; "
+                 f"order gap McNemar p={pval(v['order_test']['p'])}; %A vs 50% binomial p={pval(v['pct_A_test_p'])}; "
                  f"order-avg acc {pct(v['orderavg_acc_decided'])} at coverage {pct(v['orderavg_coverage'])}; "
                  f"parse fail {pct(v['parse_fail'])}")
     for k, v in M["pointwise"].items():
         L.append(f"- **{k}**: acc {pct(v['accuracy'], True)}; FAR {pct(v['far'], True)}; FRR {pct(v['frr'], True)}; "
                  f"said correct {pct(v['pct_said_correct'])}; parse fail {pct(v['parse_fail'])}")
     for k, t in M["tests"].items():
-        L.append(f"- **{k}**: only baseline right {t['only_a']}, only fix right {t['only_b']}, McNemar p={pval(t['p'])}")
+        L.append(f"- **{k}**: right only in the first {t['only_a']}, right only in the second {t['only_b']}, McNemar p={pval(t['p'])}")
     for m, v in M["verbosity"].items():
         L.append(f"- **exp2_{m}**: wrong answer wins {pct(v['baseline'])} -> {pct(v['padded'])} "
                  f"({v['delta_pp']:+.1f} pp), McNemar p={pval(v['test']['p'])}")

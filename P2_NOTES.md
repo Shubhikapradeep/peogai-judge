@@ -10,9 +10,9 @@
 | 4. Prompts | Done by P1 in `prompts/`. Reviewed, not changed |
 | 5. `perturb.py` → `data/pairs_150_verbose.jsonl` | Done (script by P1). 144 of 150 answers got step comments, 6 got only the header comment |
 | 6. `src/metrics.py` | Done, tested on synthetic results |
-| 7. Tables and charts | Done: `src/metrics.py` writes tables, `src/plots.py` writes figures. They fill in once real results exist |
-| 8. 3–5 main findings | Waiting for real results |
-| 9. Results section | Draft in `report/results.tex` with red `\tbd{}` blanks |
+| 7. Tables and charts | Code done and tested. Produced by the commands below once `results/raw/` has the real files |
+| 8. 3–5 main findings | Code done: `src/write_results.py` writes `results/findings.md` from the numbers. **Read it before using it** |
+| 9. Results section | Code done: `src/write_results.py` writes `report/results_auto.tex` with every number filled in. `report/results.tex` is the older hand-fill template, kept as a fallback |
 | Methodology text (for P4) | `report/methodology_p2.tex`: Dataset, Judge prompts and Metrics subsections, ready to paste |
 
 ## Run it
@@ -21,7 +21,10 @@
 pip install matplotlib                       # metrics.py itself needs only the standard library
 python -m src.metrics                        # results/raw/*.jsonl -> results/metrics.json, results/key_numbers.md, results/tables/
 python -m src.plots                          # results/metrics.json -> results/figures/*.png (slides) and *.pdf (LaTeX)
+python -m src.write_results                  # -> results/findings.md and report/results_auto.tex
+python -m src.data_stats                     # data slide table (only needed if the data changes)
 ```
+`write_results.py` calls an effect real only when its test gives p < 0.05, and says "not significant" otherwise. It cannot tell which result is the most interesting, so read `findings.md`, reorder or trim it to 3–5 points, and check that every sentence still matches the figures.
 Point `--raw` at the Drive folder if the raw files haven't been copied into the repo yet. Missing experiments are skipped, so you can run this after each experiment finishes.
 
 ## Outputs
@@ -51,3 +54,12 @@ Point `--raw` at the Drive folder if the raw files haven't been copied into the 
 ## For P1
 
 Raw files must stay `results/raw/<exp>_<model>.jsonl` (for example `exp1_3b.jsonl`). `metrics.py` skips files with `_smoke` in the name and keeps only the last row for each `job_id`.
+
+## Viva answers for P2's part
+
+- **Why 150 pairs, and are the results reliable?** At a 50% rate, the 95% CI is about ±5.7 points over 300 calls and ±8.0 over 150 pairs. Every rate in the report has its CI, so a reader can see which differences are larger than the noise. Comparisons on the same calls use an exact McNemar test, which counts only the calls where the two conditions disagree, so it is more sensitive than comparing two CIs.
+- **How did you measure position bias?** Every pair is judged in both orders. Position bias shows up in three ways: an accuracy gap between the two orders (McNemar test), a share of A verdicts away from 50% (binomial test), and pairs where the same letter comes back twice (AA or BB).
+- **Why does FAR matter more than accuracy for code auditing?** A false acceptance ships a bug, while a false rejection only costs a second review. A judge that says "correct" to everything scores 50% accuracy on our balanced data but has a FAR of 100%.
+- **Why are parse failures counted as wrong?** Dropping them would reward a judge for refusing to answer on hard items. Their rate is reported separately, so the reader can see their effect.
+- **Why does order averaging report coverage?** It only gives a verdict when both orders agree, and the pairs it skips are the hard ones. Accuracy on the decided pairs alone would overstate the gain.
+- **Data caveats to admit up front:** difficulty labels in CodeJudgeBench disagree across splits for 82% of the problems that appear in more than one split, so the difficulty breakdown is indicative only. Exp 2 padding also makes the wrong answer longer, so Exp 2 measures comments and length together.
