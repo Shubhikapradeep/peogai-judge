@@ -151,6 +151,14 @@ def pairwise_metrics(rows: list[dict]) -> dict:
     m["order_test"] = mcnemar([p["cf"]["verdict"] == "A" for p in full],
                               [p["cs"]["verdict"] == "B" for p in full])
     m["pct_A_test_p"] = binom_two_sided(m["pct_A"]["k"], m["pct_A"]["n"])
+    m["acc_vs_chance_p"] = binom_two_sided(m["accuracy"]["k"], m["accuracy"]["n"])
+    # How often each letter is right when the judge gives it. With a judge that defaults to A, the rare
+    # B verdicts show whether the model still reads the code.
+    for letter in ("A", "B"):
+        said = [r for r in rows if r["verdict"] == letter]
+        k = sum(r["gold"] == letter for r in said)
+        m[f"precision_{letter}"] = prop(k, len(said))
+        m[f"precision_{letter}_p"] = binom_two_sided(k, len(said))
     m["position_gap_pp"] = (100 * (m["acc_cf"]["p"] - m["acc_cs"]["p"])
                             if m["acc_cf"]["p"] is not None and m["acc_cs"]["p"] is not None else None)
     return m
@@ -169,6 +177,8 @@ def pointwise_metrics(rows: list[dict]) -> dict:
         "parse_fail": prop(sum(r["verdict"] is None for r in rows), n),
         # both answers of a pair judged right -> the judge actually separated the pair
         "pair_both_right": prop(*_pair_both_right(rows)),
+        "acc_vs_chance_p": binom_two_sided(sum(r["verdict"] == r["gold"] for r in rows), n),
+        "said_correct_vs_half_p": binom_two_sided(sum(r["verdict"] == "correct" for r in rows), n),
     }
 
 
@@ -189,6 +199,23 @@ def by_difficulty(rows: list[dict], fn) -> dict:
     return out
 
 
+def pair_consistent(rows: list[dict]) -> dict:
+    """{pair_id: True if both orders pick the same answer}."""
+    out = {}
+    for pid, p in by_pair(rows).items():
+        if "cf" in p and "cs" in p:
+            a, b = pick("cf", p["cf"]["verdict"]), pick("cs", p["cs"]["verdict"])
+            out[pid] = a is not None and a == b
+    return out
+
+
+def paired_dict(a: dict, b: dict) -> dict:
+    common = sorted(set(a) & set(b))
+    res = mcnemar([a[k] for k in common], [b[k] for k in common])
+    res["n"] = len(common)
+    return res
+
+
 def paired(rows_a: list[dict], rows_b: list[dict], key) -> dict:
     """McNemar between two conditions on the job_ids both have."""
     a = {r["job_id"]: key(r) for r in rows_a}
@@ -197,6 +224,30 @@ def paired(rows_a: list[dict], rows_b: list[dict], key) -> dict:
     res = mcnemar([a[j] for j in common], [b[j] for j in common])
     res["n"] = len(common)
     return res
+
+
+def check_data(raw: dict, data_path: Path) -> dict:
+    """Check every raw row against the data file, so runs made on an older sample can't be mixed in.
+    Rows that record question_id are checked exactly; older rows only by difficulty label, which
+    catches a different sample most of the time but cannot prove a match."""
+    if not data_path.exists():
+        return {"ok": None, "note": f"{data_path} not found; data not checked"}
+    data = {}
+    with open(data_path) as f:
+        for line in f:
+            d = json.loads(line)
+            data[str(d["pair_id"])] = d
+    files, ok = {}, True
+    for (exp, model), rows in sorted(raw.items()):
+        bad = [r["job_id"] for r in rows
+               if str(r["pair_id"]) not in data
+               or ("question_id" in r and str(r["question_id"]) != str(data[str(r["pair_id"])]["question_id"]))
+               or (r.get("difficulty") and r["difficulty"] != data[str(r["pair_id"])]["difficulty"])]
+        exact = all("question_id" in r for r in rows)
+        files[f"{exp}_{model}"] = {"rows": len(rows), "mismatched": len(bad), "checked_by": "question_id" if exact else "difficulty",
+                                   "examples": bad[:5]}
+        ok &= not bad
+    return {"ok": ok, "data": str(data_path), "files": files}
 
 
 def compute(raw: dict) -> dict:
@@ -215,11 +266,19 @@ def compute(raw: dict) -> dict:
         M["difficulty"][f"exp1_{model}"] = by_difficulty(base, pairwise_metrics)
         if ("exp3", model) in raw:
             M["difficulty"][f"exp3_{model}"] = by_difficulty(raw[("exp3", model)], pointwise_metrics)
+        said_a = lambda r: r["verdict"] == "A"
         for fix in ("exp4b", "exp4c"):
             if (fix, model) in raw:
                 M["tests"][f"exp1_vs_{fix}_{model}"] = paired(base, raw[(fix, model)], is_right)
+                M["tests"][f"pctA_exp1_vs_{fix}_{model}"] = paired(base, raw[(fix, model)], said_a)
+                M["tests"][f"consistency_exp1_vs_{fix}_{model}"] = paired_dict(
+                    pair_consistent(base), pair_consistent(raw[(fix, model)]))
         if model == MODELS[0] and all((e, m_) in raw for e in ("exp1",) for m_ in MODELS):
             M["tests"]["exp1_3b_vs_7b"] = paired(raw[("exp1", "3b")], raw[("exp1", "7b")], is_right)
+            M["tests"]["pctA_3b_vs_7b"] = paired(raw[("exp1", "3b")], raw[("exp1", "7b")],
+                                                 lambda r: r["verdict"] == "A")
+            M["tests"]["consistency_3b_vs_7b"] = paired_dict(pair_consistent(raw[("exp1", "3b")]),
+                                                             pair_consistent(raw[("exp1", "7b")]))
         if model == MODELS[0] and all(("exp3", m_) in raw for m_ in MODELS):
             M["tests"]["exp3_3b_vs_7b"] = paired(raw[("exp3", "3b")], raw[("exp3", "7b")], is_right)
         # Exp 2: how often the (padded) wrong answer wins
@@ -234,6 +293,7 @@ def compute(raw: dict) -> dict:
                 p_o = [r for r in pad if r["order"] == order]
                 v[f"baseline_{order}"] = prop(sum(map(wins, b_o)), len(b_o))
                 v[f"padded_{order}"] = prop(sum(map(wins, p_o)), len(p_o))
+                v[f"test_{order}"] = paired(b_o, p_o, wins)
             v["delta_pp"] = 100 * (v["padded"]["p"] - v["baseline"]["p"])
             M["verbosity"][model] = v
     return M
@@ -369,12 +429,19 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--raw", default=str(ROOT / "results" / "raw"))
     ap.add_argument("--out", default=str(ROOT / "results"))
+    ap.add_argument("--data", default=str(ROOT / "data" / "pairs_150.jsonl"), help="the sample the runs must match")
     args = ap.parse_args()
     raw = load_raw(Path(args.raw))
     if not raw:
         raise SystemExit(f"no <exp>_<model>.jsonl files in {args.raw}")
     print("loaded:", ", ".join(f"{e}_{m} ({len(r)} rows)" for (e, m), r in sorted(raw.items())))
     M = compute(raw)
+    M["data_check"] = check_data(raw, Path(args.data))
+    if M["data_check"]["ok"] is False:
+        bad = {k: v["mismatched"] for k, v in M["data_check"]["files"].items() if v["mismatched"]}
+        print("\n" + "!" * 78 + f"\n!!! DATA CHECK FAILED: these runs do not match {args.data}: {bad}\n"
+              "!!! They were judged on a different sample, so comparisons across experiments are invalid.\n"
+              "!!! Delete those raw files and re-run them before using any table, figure or finding.\n" + "!" * 78 + "\n")
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "metrics.json").write_text(json.dumps(M, indent=1))

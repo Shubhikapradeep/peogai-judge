@@ -1,5 +1,21 @@
 # P2 notes: data, metrics, tables and figures
 
+## ⚠️ Re-run needed before using any result (found 15 Nov)
+
+The runs pushed on 15 Nov were not all judged on the same 150 pairs:
+
+| Run | Data used |
+|---|---|
+| `exp1_3b`, `exp1_7b` | the **old** pre-fix sample (difficulty 56/40/54), all 300 calls |
+| `exp3_3b` | **mixed**: about the first 176 calls on the old sample, the rest on the current one |
+| `exp2_3b`, `exp3_7b`, `exp4b_*`, `exp4c_3b` | the current `data/pairs_150.jsonl` ✓ |
+
+The two samples hold different problems under the same pair ids (0 of 150 match), so every comparison with the Exp 1 baseline is invalid until these are re-run. That covers the fixes, verbosity, and 3B vs 7B in pointwise. The tables, figures and `key_numbers.md` currently in `results/` were built from this mix. **Don't use them in the report or slides.**
+
+**Fix (P1, about 11 minutes on a T4):** pull the latest `main`, which includes the committed data. Delete these files in the Drive `results/raw/` folder: `exp1_3b.jsonl`, `exp1_3b_meta.json`, `exp1_7b.jsonl`, `exp1_7b_meta.json`, `exp3_3b.jsonl` and `exp3_3b_meta.json`. Then run `bash scripts/run_all.sh <OUT_DIR>` again. Finished runs are skipped, so only those three re-run, and metrics, plots and findings are regenerated at the end.
+
+To stop this happening again, rows now record `question_id`. `metrics.py` checks every row against the data file and prints a DATA CHECK FAILED banner on a mismatch, and `write_results.py` refuses to write findings until the check passes.
+
 ## Status
 
 | Plan task | Status |
