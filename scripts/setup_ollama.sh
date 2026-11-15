@@ -43,3 +43,4 @@ RESPONSE=$(curl -s http://localhost:11434/api/generate -d "{
 
 echo "[✓] Ollama verification complete! Response received."
 echo "=== You are ready to run: python -m app.app ==="
+

@@ -234,3 +234,4 @@ IEEE Report & Slide Deck
 **Repository:** `peogai-judge`  
 **Demo Launch:** `python -m app.app` (or `python -m app.web_demo`)  
 **IEEE Report:** `report/results.tex` & `report/experimental_setup.tex`
+

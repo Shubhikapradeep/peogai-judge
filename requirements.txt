@@ -14,3 +14,4 @@ accelerate>=0.28.0
 # Optional: Quantization & vLLM (Linux/Colab with GPU)
 # bitsandbytes>=0.43.0
 # vllm>=0.6.0
+

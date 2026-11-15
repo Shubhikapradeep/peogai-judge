@@ -99,9 +99,10 @@ HTML_PAGE = """<!DOCTYPE html>
     <div class="card">
       <label for="example-select">⚡ Load Benchmark Case</label>
       <select id="example-select" onchange="loadCase()">
-        <option value="0">Example 1 (Severe Position Bias Flip): Longest Subsequence Sum</option>
-        <option value="1">Example 2 (Consistent Agreement): Beautiful Binary String</option>
-        <option value="2">Example 3 (Algorithmic Complexity): Min Absolute Difference with Distance</option>
+        <option value="0">Example 1 (Position Bias Flip): Longest Subsequence Sum (p015) ──> [UNDECIDED]</option>
+        <option value="1">Example 2 (Consistent Agreement): Beautiful Binary String (p062) ──> [DECIDED]</option>
+        <option value="2">Example 3 (Consistent Agreement): Server Request Window Counter (p024) ──> [DECIDED]</option>
+        <option value="3">Example 4 (Position Bias Flip): Min Absolute Difference (p014) ──> [UNDECIDED]</option>
       </select>
       <div id="case-info" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;"></div>
 

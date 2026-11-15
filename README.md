@@ -208,3 +208,4 @@ python -m src.plots
 - **P2 (Data & Metrics):** `src/sample_data.py`, `src/perturb.py`, `src/metrics.py`, `src/plots.py`, Tables 1–5, Figures 1–5, Section V results text.
 - **P3 (Demo, Slides & Repo):** `app/app.py` (Gradio), `app/web_demo.py` (standalone server), 3 ready-made demo cases, `demo/DEMO_SCRIPT.md` (3-4 min video guide), 14-slide deck (`slides/index.html`, `slides/presentation.md`, `slides/presentation.tex`), and master `README.md`.
 - **P4 (Report & Synthesis):** IEEE 10-page conference paper draft, system design diagram, limitations analysis, and viva defense synthesis.
+

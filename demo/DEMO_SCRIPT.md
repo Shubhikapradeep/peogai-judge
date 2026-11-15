@@ -85,3 +85,4 @@
 - [ ] **Device 1:** Local storage on laptop (`peogai-judge/demo/PEOGAI_Demo_Video_P3.mp4`).
 - [ ] **Device 2:** Phone / Tablet / USB drive / Cloud Drive (Google Drive / iCloud / OneDrive).
 - [ ] Test playback with audio on both devices before viva presentation!
+
