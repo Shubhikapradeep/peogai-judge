@@ -222,7 +222,7 @@ def finding_verbosity(r: R):
     for m, v in V.items():
         p, pA, pB = v["test"]["p"], v["test_cs"]["p"], v["test_cf"]["p"]   # cs: wrong answer shown as A
         head = (f"Padding the wrong answer with comments changes how often the {NAME[m]} judge picks it from "
-                f"{pc(v['baseline'])} to {pc(v['padded'])} ({pv(p)}).")
+                f"{pc(v['baseline'])} to {pc(v['padded'])} ({pv(p)}{'' if sig(p) else ', not significant'}).")
         dA = v["padded_cs"]["p"] - v["baseline_cs"]["p"]
         dB = v["padded_cf"]["p"] - v["baseline_cf"]["p"]
         split = (f" When the padded answer is shown as A it wins {pc(v['baseline_cs'])} -> {pc(v['padded_cs'])} ({pv(pA)}); "

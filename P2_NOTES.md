@@ -1,20 +1,8 @@
 # P2 notes: data, metrics, tables and figures
 
-## ⚠️ Re-run needed before using any result (found 15 Nov)
+## Data check (resolved 15 Nov)
 
-The runs pushed on 15 Nov were not all judged on the same 150 pairs:
-
-| Run | Data used |
-|---|---|
-| `exp1_3b`, `exp1_7b` | the **old** pre-fix sample (difficulty 56/40/54), all 300 calls |
-| `exp3_3b` | **mixed**: about the first 176 calls on the old sample, the rest on the current one |
-| `exp2_3b`, `exp3_7b`, `exp4b_*`, `exp4c_3b` | the current `data/pairs_150.jsonl` ✓ |
-
-The two samples hold different problems under the same pair ids (0 of 150 match), so every comparison with the Exp 1 baseline is invalid until these are re-run. That covers the fixes, verbosity, and 3B vs 7B in pointwise. The tables, figures and `key_numbers.md` currently in `results/` were built from this mix. **Don't use them in the report or slides.**
-
-**Fix (P1, about 11 minutes on a T4):** pull the latest `main`, which includes the committed data. Delete these files in the Drive `results/raw/` folder: `exp1_3b.jsonl`, `exp1_3b_meta.json`, `exp1_7b.jsonl`, `exp1_7b_meta.json`, `exp3_3b.jsonl` and `exp3_3b_meta.json`. Then run `bash scripts/run_all.sh <OUT_DIR>` again. Finished runs are skipped, so only those three re-run, and metrics, plots and findings are regenerated at the end.
-
-To stop this happening again, rows now record `question_id`. `metrics.py` checks every row against the data file and prints a DATA CHECK FAILED banner on a mismatch, and `write_results.py` refuses to write findings until the check passes.
+The first batch of results mixed two samples: `exp1_3b` and `exp1_7b` ran on the pre-fix sample, and `exp3_3b` was partly on it. P1 re-ran those three on the current `data/pairs_150.jsonl`. All eight runs now match it on every row (0 mismatches), and none match the old sample, which differs on 196 rows. `metrics.py` repeats this check on every run and records it in `metrics.json` under `data_check`. Those runs predate `question_id` logging, so the check uses difficulty labels. Future runs record `question_id` and are checked exactly.
 
 ## Status
 
@@ -26,9 +14,9 @@ To stop this happening again, rows now record `question_id`. `metrics.py` checks
 | 4. Prompts | Done by P1 in `prompts/`. Reviewed, not changed |
 | 5. `perturb.py` → `data/pairs_150_verbose.jsonl` | Done (script by P1). 144 of 150 answers got step comments, 6 got only the header comment |
 | 6. `src/metrics.py` | Done, tested on synthetic results |
-| 7. Tables and charts | Code done and tested. Produced by the commands below once `results/raw/` has the real files |
-| 8. 3–5 main findings | Code done: `src/write_results.py` writes `results/findings.md` from the numbers. **Read it before using it** |
-| 9. Results section | Code done: `src/write_results.py` writes `report/results_auto.tex` with every number filled in. `report/results.tex` is the older hand-fill template, kept as a fallback |
+| 7. Tables and charts | **Done** on the final results: `results/tables/`, `results/figures/` |
+| 8. 3–5 main findings | **Done**: `results/findings.md` (every claim backed by a test, p < 0.05) |
+| 9. Results section | **Done**: `report/results_auto.tex`, for P4 to paste into Overleaf. `report/results.tex` is the old hand-fill template, now superseded |
 | Methodology text (for P4) | `report/methodology_p2.tex`: Dataset, Judge prompts and Metrics subsections, ready to paste |
 
 ## Run it

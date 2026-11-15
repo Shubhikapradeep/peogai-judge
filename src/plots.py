@@ -160,10 +160,11 @@ def fig_verbosity(M, out):
     grouped_bars(ax, ["cf", "cs", ""], ["baseline", "padded"],
                  lambda s, o: v[f"{s}_{o}"] if o else v[s], [NEUTRAL, COLOR[m]],
                  ["Plain wrong answer", "Wrong answer padded with comments"], chance=None)
-    ax.set_xticklabels(["Correct=A", "Correct=B", "Overall"])
+    ax.set_xticklabels(["As B", "As A", "Overall"])
+    ax.set_xlabel("Where the wrong answer was shown", color=INK2)
     ax.set_ylabel("Wrong answer chosen (%)")
     ax.set_title(f"Exp 2: verbosity ({m.upper()})")
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.14), ncol=1, fontsize=7.5)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.24), ncol=1, fontsize=7.5)
     save(fig, out, "f4_verbosity")
 
 

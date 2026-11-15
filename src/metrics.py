@@ -386,7 +386,7 @@ def make_tables(M: dict, out_dir: Path):
     if rows:
         write_table(out_dir, "t4_verbosity", "Exp 2: how often the wrong answer wins, before and after padding it with comments",
                     ["Model", "Wrong wins (plain)", "Wrong wins (padded)", "Δ pp",
-                     "Correct=A", "Correct=B", "p"], rows,
+                     "Wrong shown as B", "Wrong shown as A", "p"], rows,
                     "Values in %. p: exact McNemar test on the same 300 calls.")
 
     rows = []
@@ -418,7 +418,10 @@ def key_numbers(M: dict) -> str:
         L.append(f"- **{k}**: acc {pct(v['accuracy'], True)}; FAR {pct(v['far'], True)}; FRR {pct(v['frr'], True)}; "
                  f"said correct {pct(v['pct_said_correct'])}; parse fail {pct(v['parse_fail'])}")
     for k, t in M["tests"].items():
-        L.append(f"- **{k}**: right only in the first {t['only_a']}, right only in the second {t['only_b']}, McNemar p={pval(t['p'])}")
+        what = ("A verdicts" if k.startswith("pctA") else "consistent pairs" if k.startswith("consistency")
+                else "correct calls")
+        L.append(f"- **{k}** ({what}): only in the first {t['only_a']}, only in the second {t['only_b']}, "
+                 f"McNemar p={pval(t['p'])}")
     for m, v in M["verbosity"].items():
         L.append(f"- **exp2_{m}**: wrong answer wins {pct(v['baseline'])} -> {pct(v['padded'])} "
                  f"({v['delta_pp']:+.1f} pp), McNemar p={pval(v['test']['p'])}")
