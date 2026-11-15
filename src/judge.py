@@ -166,7 +166,7 @@ class HFBackend(Backend):
     """transformers + bitsandbytes. 7B is loaded in 4-bit NF4; 3B in fp16."""
     name = "hf"
 
-    def __init__(self, model_key: str, four_bit: bool | None = None, max_input_tokens: int = 6000):
+    def __init__(self, model_key: str, four_bit: bool | None = None, max_input_tokens: int = 16384):
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
         self.torch = torch
@@ -190,8 +190,11 @@ class HFBackend(Backend):
         texts = [self.tok.apply_chat_template(
             [{"role": "system", "content": SYSTEM_MSG}, {"role": "user", "content": p}],
             tokenize=False, add_generation_prompt=True) for p in prompts]
-        enc = self.tok(texts, return_tensors="pt", padding=True, truncation=True,
-                       max_length=self.max_input_tokens).to(self.model.device)
+        # No truncation: cutting the prompt would drop the final output instruction.
+        # Qwen2.5-Coder handles 32k context; longest pair here is ~7k tokens.
+        enc = self.tok(texts, return_tensors="pt", padding=True).to(self.model.device)
+        if enc["input_ids"].shape[1] > self.max_input_tokens:
+            print(f"warning: prompt of {enc['input_ids'].shape[1]} tokens exceeds {self.max_input_tokens}")
         torch.manual_seed(seed)
         gen_kw = dict(max_new_tokens=max_new_tokens, pad_token_id=self.tok.pad_token_id,
                       num_return_sequences=n)
@@ -210,7 +213,7 @@ class VLLMBackend(Backend):
     """vLLM. 7B uses the official AWQ 4-bit checkpoint."""
     name = "vllm"
 
-    def __init__(self, model_key: str, max_model_len: int = 8192, gpu_mem: float = 0.90):
+    def __init__(self, model_key: str, max_model_len: int = 12288, gpu_mem: float = 0.90):
         from vllm import LLM
         self.model_id = MODELS[model_key][1]
         self.quant = "4-bit AWQ" if "AWQ" in self.model_id else "fp16"
@@ -243,7 +246,7 @@ class OllamaBackend(Backend):
             "messages": [{"role": "system", "content": SYSTEM_MSG},
                          {"role": "user", "content": prompt}],
             "options": {"temperature": temperature, "num_predict": max_new_tokens,
-                        "seed": seed, "num_ctx": 8192},
+                        "seed": seed, "num_ctx": 12288},
         }).encode()
         req = urllib.request.Request(f"{self.host}/api/chat", data=body,
                                      headers={"Content-Type": "application/json"})
