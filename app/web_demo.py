@@ -103,19 +103,19 @@ HTML_PAGE = """<!DOCTYPE html>
         <option value="2">Example 3 (Consistent Agreement): Server Request Window Counter (p024) ──> [DECIDED]</option>
         <option value="3">Example 4 (Position Bias Flip): Min Absolute Difference (p014) ──> [UNDECIDED]</option>
       </select>
-      <div id="case-info" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;"></div>
+      <div id="case-info" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">INIT_INFO</div>
 
       <label for="problem">Problem Description</label>
-      <textarea id="problem" rows="7"></textarea>
+      <textarea id="problem" rows="7">INIT_PROBLEM</textarea>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
           <label for="cand1">Candidate Solution 1</label>
-          <textarea id="cand1" rows="12"></textarea>
+          <textarea id="cand1" rows="12">INIT_CAND1</textarea>
         </div>
         <div>
           <label for="cand2">Candidate Solution 2</label>
-          <textarea id="cand2" rows="12"></textarea>
+          <textarea id="cand2" rows="12">INIT_CAND2</textarea>
         </div>
       </div>
 
@@ -238,17 +238,26 @@ function showTab(tabName) {
   document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-' + tabName).classList.add('active');
-  event.target.classList.add('active');
+  if (event && event.target) {
+    event.target.classList.add('active');
+  }
 }
 
 function loadCase() {
-  const idx = document.getElementById('example-select').value;
+  const sel = document.getElementById('example-select');
+  if (!sel) return;
+  const idx = parseInt(sel.value, 10);
   const ex = examples[idx];
   if (!ex) return;
-  document.getElementById('problem').value = ex.problem;
-  document.getElementById('cand1').value = ex.candidate_1;
-  document.getElementById('cand2').value = ex.candidate_2;
-  document.getElementById('case-info').innerHTML = `<strong>Category:</strong> ${ex.category} | <strong>Expected:</strong> ${ex.expected_behavior}`;
+  document.getElementById('problem').value = ex.problem || '';
+  document.getElementById('cand1').value = ex.candidate_1 || '';
+  document.getElementById('cand2').value = ex.candidate_2 || '';
+  document.getElementById('case-info').innerHTML = '<strong>Category:</strong> ' + ex.category + ' | <strong>Expected:</strong> ' + ex.expected_behavior;
+}
+
+function formatMd(text) {
+  if (!text) return '';
+  return text.split('### ').join('<h4>').split(String.fromCharCode(10)).join('<br>');
 }
 
 async function runEval() {
@@ -274,16 +283,17 @@ async function runEval() {
     const data = await res.json();
 
     badge.className = data.bias_detected ? 'alert alert-danger' : 'alert alert-success';
-    badge.innerHTML = `<strong>${data.status_box}</strong>`;
+    badge.innerHTML = '<strong>' + data.status_box + '</strong>';
 
-    document.getElementById('fixed-verdict').style.display = 'block';
-    document.getElementById('fixed-verdict').innerHTML = data.fixed_verdict.replace(/### /g, '<h3>').replace(/\n/g, '<br>');
+    const verdictEl = document.getElementById('fixed-verdict');
+    verdictEl.style.display = 'block';
+    verdictEl.innerHTML = formatMd(data.fixed_verdict);
 
-    document.getElementById('order1-res').innerHTML = data.ord1_display.replace(/### /g, '<h4>').replace(/\n/g, '<br>');
-    document.getElementById('order2-res').innerHTML = data.ord2_display.replace(/### /g, '<h4>').replace(/\n/g, '<br>');
+    document.getElementById('order1-res').innerHTML = formatMd(data.ord1_display);
+    document.getElementById('order2-res').innerHTML = formatMd(data.ord2_display);
 
-    document.getElementById('bias-explanation').innerHTML = data.bias_status.replace(/### /g, '<h4>').replace(/\n/g, '<br>');
-    document.getElementById('meta-info').innerText = data.meta_metrics.replace(/\\*\\*/g, '').replace(/`/g, '');
+    document.getElementById('bias-explanation').innerHTML = formatMd(data.bias_status);
+    document.getElementById('meta-info').innerText = (data.meta_metrics || '').split('**').join('').split('`').join('');
   } catch(err) {
     badge.className = 'alert alert-danger';
     badge.innerText = 'Error running evaluation: ' + err;
@@ -291,7 +301,9 @@ async function runEval() {
 }
 
 // Initial load
+document.addEventListener('DOMContentLoaded', loadCase);
 window.onload = loadCase;
+setTimeout(loadCase, 100);
 </script>
 </body>
 </html>
@@ -303,6 +315,12 @@ class DemoHTTPHandler(http.server.BaseHTTPRequestHandler):
         url = urlparse(self.path)
         if url.path == "/" or url.path == "/index.html":
             html = HTML_PAGE.replace("EXAMPLES_DATA_JSON", json.dumps(DEMO_EXAMPLES))
+            ex0 = DEMO_EXAMPLES[0] if DEMO_EXAMPLES else {}
+            html = html.replace("INIT_PROBLEM", ex0.get("problem", ""))
+            html = html.replace("INIT_CAND1", ex0.get("candidate_1", ""))
+            html = html.replace("INIT_CAND2", ex0.get("candidate_2", ""))
+            info_str = f"<strong>Category:</strong> {ex0.get('category', '')} | <strong>Expected:</strong> {ex0.get('expected_behavior', '')}"
+            html = html.replace("INIT_INFO", info_str)
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
