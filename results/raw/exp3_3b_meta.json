@@ -3,23 +3,23 @@
   "model_key": "3b",
   "sessions": [
     {
-      "started": "2026-11-15 14:25:57",
+      "started": "2026-11-15 16:33:49",
       "backend": "vllm",
       "model_id": "Qwen/Qwen2.5-Coder-3B-Instruct",
       "quant": "fp16",
       "gpu": "Tesla T4",
       "python": "3.13.16",
-      "load_seconds": 238.6,
-      "calls": 124,
-      "run_seconds": 93.2,
+      "load_seconds": 93.2,
+      "calls": 300,
+      "run_seconds": 225.5,
       "sec_per_call": 0.752
     }
   ],
-  "compute_seconds": 93.2,
+  "compute_seconds": 225.5,
   "summary": {
     "n": 300,
-    "accuracy": 0.5367,
+    "accuracy": 0.53,
     "parse_fail": 0,
-    "false_accept_rate": 0.82
+    "false_accept_rate": 0.76
   }
 }

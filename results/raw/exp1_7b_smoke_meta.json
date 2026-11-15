@@ -3,25 +3,25 @@
   "model_key": "7b",
   "sessions": [
     {
-      "started": "2026-11-13 19:06:27",
+      "started": "2026-11-15 16:19:16",
       "backend": "vllm",
       "model_id": "Qwen/Qwen2.5-Coder-7B-Instruct-AWQ",
       "quant": "4-bit AWQ",
       "gpu": "Tesla T4",
       "python": "3.13.16",
-      "load_seconds": 263.9,
+      "load_seconds": 210.9,
       "calls": 10,
-      "run_seconds": 33.2,
-      "sec_per_call": 3.321
+      "run_seconds": 44.3,
+      "sec_per_call": 4.43
     }
   ],
-  "compute_seconds": 33.2,
+  "compute_seconds": 44.3,
   "summary": {
     "n": 10,
-    "accuracy": 0.7,
+    "accuracy": 0.6,
     "parse_fail": 0,
-    "pct_A": 0.8,
-    "consistent_pairs": 2,
+    "pct_A": 0.9,
+    "consistent_pairs": 1,
     "pairs_both_orders": 5
   }
 }
