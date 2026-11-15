@@ -6,13 +6,14 @@
 |---|---|
 | 1. Check the dataset | Done. `mattymchen/codejudgebench`, config `codegen`, 7 splits (named by generator model), 2,103 pairs, 676 distinct problems |
 | 2. `sample_data.py` → `data/pairs_150.jsonl` | Done (script by P1, one fix by P2, see below). 150 pairs, 50 easy / 50 medium / 50 hard, seed 42 |
-| 3. Data stats | Done: `data/pairs_150_stats.json` |
+| 3. Data stats | Done: `python -m src.data_stats` → `results/tables/t0_data.*` (data slide) and `results/data_stats.json` |
 | 4. Prompts | Done by P1 in `prompts/`. Reviewed, not changed |
 | 5. `perturb.py` → `data/pairs_150_verbose.jsonl` | Done (script by P1). 144 of 150 answers got step comments, 6 got only the header comment |
 | 6. `src/metrics.py` | Done, tested on synthetic results |
 | 7. Tables and charts | Done: `src/metrics.py` writes tables, `src/plots.py` writes figures. They fill in once real results exist |
 | 8. 3–5 main findings | Waiting for real results |
 | 9. Results section | Draft in `report/results.tex` with red `\tbd{}` blanks |
+| Methodology text (for P4) | `report/methodology_p2.tex`: Dataset, Judge prompts and Metrics subsections, ready to paste |
 
 ## Run it
 
@@ -43,7 +44,9 @@ Point `--raw` at the Drive folder if the raw files haven't been copied into the 
 - **Fix to `sample_data.py`:** the same problem often has a different difficulty label in different splits. Of the 508 problems that appear in more than one split, 416 (82%) disagree. The sampler stratified on one row's label but saved the label of a different, randomly picked row, so the saved split was 56 / 40 / 54 instead of 50 / 50 / 50. It now stratifies on the label of the row it actually saves. **If anyone generated `pairs_150.jsonl` with the old version, discard that copy and use the one committed here.**
 - Because the labels are this noisy, treat the by-difficulty results (Table 5, Fig 5) as indicative only, and say so in Limitations.
 - Answers are code only: the last fenced block of each generator response, without its reasoning.
-- Sample: 82 AtCoder, 66 LeetCode and 2 Codeforces problems. Correct answers average 64.7 lines and incorrect ones 58.3, so the correct answer is slightly longer. Keep this in mind when discussing length bias.
+- Sample: 78 LeetCode, 71 AtCoder and 1 Codeforces problem. Correct and incorrect answers have almost the same length (mean 64.8 vs 65.3 lines, median 59 vs 59.5). The correct one is longer in 65 of 150 pairs. (An earlier version of this note gave 64.7 vs 58.3; those figures came from the sample before the fix and were wrong.)
+- Exp 2 padding adds 16.9 comment lines on average and makes the wrong answer longer than the correct one in 127 of 150 pairs. Exp 2 therefore tests comments and extra length together, not comments alone.
+- If P1 ran on the transformers fallback (`--backend hf`), input is cut at 6,000 tokens. By a character-count estimate, 2–5 pairwise prompts are longer than that and would lose their final instruction. Check for parse failures on those pairs. vLLM runs (8,192-token limit) are not affected.
 
 ## For P1
 

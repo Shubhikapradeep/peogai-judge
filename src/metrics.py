@@ -236,7 +236,8 @@ def pval(p):
     return "--" if p is None else ("<0.001" if p < 0.001 else f"{p:.3f}")
 
 
-def write_table(out_dir: Path, name: str, caption: str, header: list[str], rows: list[list[str]], note=""):
+def write_table(out_dir: Path, name: str, caption: str, header: list[str], rows: list[list[str]], note="",
+                colspec: str | None = None):
     out_dir.mkdir(parents=True, exist_ok=True)
     with open(out_dir / f"{name}.csv", "w", newline="") as f:
         csv.writer(f).writerows([header, *rows])
@@ -249,7 +250,7 @@ def write_table(out_dir: Path, name: str, caption: str, header: list[str], rows:
                       .replace("<", r"$<$").replace("Δ", r"$\Delta$"))
     tex = [r"\begin{table}[t]", r"\centering", r"\caption{" + esc(caption) + "}",
            r"\label{tab:" + name + "}", r"\footnotesize", r"\setlength{\tabcolsep}{3pt}",
-           r"\begin{tabular}{l" + "c" * (len(header) - 1) + "}", r"\hline",
+           r"\begin{tabular}{" + (colspec or "l" + "c" * (len(header) - 1)) + "}", r"\hline",
            " & ".join(esc(h) for h in header) + r" \\", r"\hline"]
     tex += [" & ".join(esc(c) for c in r) + r" \\" for r in rows]
     tex += [r"\hline", r"\end{tabular}"]
