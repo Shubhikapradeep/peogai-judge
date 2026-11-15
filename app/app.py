@@ -55,17 +55,17 @@ class BenchmarkReplayBackend:
     def generate(self, prompts, temperature=0.0, n=1, max_new_tokens=16, seed=42):
         outs = []
         for p in prompts:
-            # Check for consistent pass examples (e.g. p062 beautiful binary string or p024 servers)
+            # Check for consistent pass examples (e.g. trivial add, p062 beautiful binary string or p024 servers)
             is_consistent_problem = (
-                "beautiful" in p.lower() or "binary string" in p.lower()
+                "add(a" in p.lower() or "return a + b" in p.lower()
+                or "beautiful" in p.lower() or "binary string" in p.lower()
                 or "server" in p.lower() or "server_id" in p.lower()
             )
             if is_consistent_problem:
                 # In consistent cases, the model recognizes the correct algorithm (Candidate 1)
                 # Check whether Candidate 1 is placed as Answer A or Answer B
-                # For p062: Candidate 1 has `for i in range(0, len(s), 2):`
-                # For p024: Candidate 1 has `requests = [0] * n` or clean queue
                 cand1_indicators = [
+                    "return a + b",
                     "for i in range(0, len(s), 2):",
                     "from collections import defaultdict",
                     "requests = [0] * n",

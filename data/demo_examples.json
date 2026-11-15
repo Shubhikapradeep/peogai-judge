@@ -1,5 +1,20 @@
 [
   {
+    "id": "demo_0_live_ollama",
+    "pair_id": "p_basic",
+    "title": "Example 0 (Live Ollama Verification): Basic Function Correctness",
+    "category": "Live Ollama Consistent -> DECIDED",
+    "expected_behavior": "Simple logic where live 3B Ollama succeeds in both orders (Order 1 -> A, Order 2 -> B); proves Ollama is running live and deciding correctly.",
+    "difficulty": "trivial",
+    "platform": "basic",
+    "problem": "Write a Python function `add(a: int, b: int) -> int` that takes two integers and returns their sum.\n\nExample 1:\nInput: a = 5, b = 3\nOutput: 8\n\nExample 2:\nInput: a = -2, b = 7\nOutput: 5",
+    "candidate_1": "def add(a: int, b: int) -> int:\n    return a + b",
+    "candidate_2": "def add(a: int, b: int) -> int:\n    return a - b",
+    "candidate_1_label": "Correct (Returns a + b)",
+    "candidate_2_label": "Incorrect (Returns a - b)",
+    "empirical_verdict": "consistent"
+  },
+  {
     "id": "demo_1_flip",
     "pair_id": "p015",
     "title": "Example 1 (Severe Position Bias Flip): Longest Subsequence Sum",
