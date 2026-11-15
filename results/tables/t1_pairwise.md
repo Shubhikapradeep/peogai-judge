@@ -1,0 +1,8 @@
+**Exp 1: pairwise judging in both answer orders**
+
+| Model | Acc (correct=A) | Acc (correct=B) | Acc overall | Consistency | % A verdicts | Parse fail |
+|---|---|---|---|---|---|---|
+| Qwen2.5-Coder-3B | 98.0 | 9.3 | 53.7 [48, 59] | 11.3 [7, 17] | 94.3 | 0.0 |
+| Qwen2.5-Coder-7B (4-bit) | 93.3 | 12.7 | 53.0 [47, 59] | 19.3 [14, 26] | 90.3 | 0.0 |
+
+_Values in %. Brackets: 95% Wilson CI. Parse failures count as wrong._

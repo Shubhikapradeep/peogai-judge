@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\caption{Exp 2: how often the wrong answer wins, before and after padding it with comments}
+\label{tab:t4_verbosity}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcccccc}
+\hline
+Model & Wrong wins (plain) & Wrong wins (padded) & $\Delta$ pp & Correct=A & Correct=B & p \\
+\hline
+Qwen2.5-Coder-3B & 46.3 & 49.7 & +3.3 & 2.0 -> 0.0 & 90.7 -> 99.3 & 0.031 \\
+\hline
+\end{tabular}
+\\[2pt]
+{\scriptsize Values in \%. p: exact McNemar test on the same 300 calls.}
+\end{table}

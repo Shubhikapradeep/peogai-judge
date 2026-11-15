@@ -1,0 +1,27 @@
+{
+  "exp": "exp1",
+  "model_key": "7b",
+  "sessions": [
+    {
+      "started": "2026-11-14 07:47:17",
+      "backend": "vllm",
+      "model_id": "Qwen/Qwen2.5-Coder-7B-Instruct-AWQ",
+      "quant": "4-bit AWQ",
+      "gpu": "Tesla T4",
+      "python": "3.13.16",
+      "load_seconds": 227.9,
+      "calls": 172,
+      "run_seconds": 485.7,
+      "sec_per_call": 2.824
+    }
+  ],
+  "compute_seconds": 485.7,
+  "summary": {
+    "n": 300,
+    "accuracy": 0.53,
+    "parse_fail": 0,
+    "pct_A": 0.9033,
+    "consistent_pairs": 29,
+    "pairs_both_orders": 150
+  }
+}
