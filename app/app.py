@@ -260,11 +260,11 @@ def build_app():
                             with gr.Row():
                                 backend_radio = gr.Radio(
                                     choices=[
-                                        ("Ollama (Local Qwen2.5-Coder-3B)", "ollama"),
-                                        ("Benchmark Replay / Offline", "benchmark_replay"),
+                                        ("Benchmark Replay / Offline (Empirical Ground Truth)", "benchmark_replay"),
+                                        ("Ollama (Local Qwen2.5-Coder-3B Live)", "ollama"),
                                         ("Mock Backend (Pure Position Bias)", "mock"),
                                     ],
-                                    value="ollama",
+                                    value="benchmark_replay",
                                     label="Judge Model Backend"
                                 )
                                 prompt_radio = gr.Radio(

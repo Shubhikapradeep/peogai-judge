@@ -361,13 +361,24 @@ class DemoHTTPHandler(http.server.BaseHTTPRequestHandler):
 
 
 def run_standalone_server(port=PORT):
-    with socketserver.TCPServer(("", port), DemoHTTPHandler) as httpd:
-        print(f"[*] Standalone Demo Server running at http://localhost:{port}")
-        print("    Press Ctrl+C to stop.")
+    socketserver.TCPServer.allow_reuse_address = True
+    for p in range(port, port + 10):
         try:
-            httpd.serve_forever()
-        except KeyboardInterrupt:
-            print("\n[*] Server stopped.")
+            httpd = socketserver.TCPServer(("", p), DemoHTTPHandler)
+            print(f"[*] Standalone Demo Server running at http://localhost:{p}")
+            print("    Press Ctrl+C to stop.")
+            try:
+                httpd.serve_forever()
+            except KeyboardInterrupt:
+                print("\n[*] Server stopped.")
+            finally:
+                httpd.server_close()
+            return
+        except OSError as e:
+            if "Address already in use" in str(e) or e.errno == 48:
+                continue
+            raise
+    print(f"[!] Could not bind to any port between {port} and {port + 9}. Please stop running processes.")
 
 
 if __name__ == "__main__":
