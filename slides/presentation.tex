@@ -1,0 +1,234 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{Madrid}
+\usecolortheme{whale}
+
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{graphicx}
+
+\title[LLM-as-a-Judge Code Auditing]{Evaluative Benchmarking of LLM-as-a-Judge for Automated Code Auditing}
+\subtitle{Assessing Position Bias, Leniency Bias, and Mitigation Bounds in Edge-Scale LLMs}
+\author[Team PEOGAI]{Course UE24AM343AB5 --- Problem Statement 3}
+\institute[PEOGAI]{Department of Computer Science and Engineering}
+\date{\today}
+
+\begin{document}
+
+% Slide 1
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% Slide 2
+\begin{frame}{2. Problem Statement \& Motivation}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \textbf{The Promise:}
+      \begin{itemize}
+        \item Continuous Integration (CI/CD) pipelines require scalable, automated code auditing.
+        \item LLM-as-a-Judge offers zero-shot review of syntax, semantics, and correctness.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{The Critical Question \& Vulnerability:}
+      \begin{itemize}
+        \item Can open-source models ($\le 7$B) running locally on consumer hardware reliably judge code?
+        \item Does the order of answer presentation dictate the verdict?
+        \item Flawed code could be merged if the evaluator suffers from presentation-order bias.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Slide 3
+\begin{frame}{3. Literature Summary \& Foundations}
+  \begin{itemize}
+    \item \textbf{MT-Bench \& Chatbot Arena (Zheng et al., 2023):} Formalized LLM-as-a-judge for natural dialogue; identified position, verbosity, and self-enhancement biases in proprietary models (GPT-4).
+    \item \textbf{CodeJudgeBench (Chen et al., 2024):} Benchmarked code evaluation with objective unit-test ground truth.
+    \item \textbf{"Bias in the Loop" (Stureborg et al., 2024):} Analyzed length bias in 70B+ models; left edge-scale coder models unexamined.
+  \end{itemize}
+\end{frame}
+
+% Slide 4
+\begin{frame}{4. Research Gaps \& Our Contributions}
+  \begin{table}
+    \centering
+    \footnotesize
+    \begin{tabular}{lll}
+      \toprule
+      \textbf{Dimension} & \textbf{Prior Literature} & \textbf{Our Contribution} \\
+      \midrule
+      Model Scale & Giant closed APIs (GPT-4, 70B+) & \textbf{Small open-weight (3B \& 7B)} on local M3 Pro \\
+      Ground Truth & Subjective human preferences & \textbf{Deterministic compiler \& test passes} \\
+      Domain & Dialogue / general NLP & \textbf{Algorithmic code correctness} \\
+      Mitigations & Assumed prompt fixes work & \textbf{Proved prompt fixes fail; verified order-averaging} \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+\end{frame}
+
+% Slide 5
+\begin{frame}{5. Research Questions}
+  \begin{itemize}
+    \item \textbf{RQ1 (Accuracy):} How accurately can small open-source models (3B and 7B) perform pairwise and pointwise code evaluation?
+    \item \textbf{RQ2 (Position Bias):} To what extent does presentation order dictate verdicts, and what is the resulting consistency gap?
+    \item \textbf{RQ3 (False Acceptance):} In pointwise auditing, what fraction of incorrect solutions are erroneously approved (FAR)?
+    \item \textbf{RQ4 (Mitigation Bounds):} Can debiasing prompts or majority voting resolve bias, or is architectural order-averaging required?
+  \end{itemize}
+\end{frame}
+
+% Slide 6
+\begin{frame}{6. Scope: What We Did and Did Not Do}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \textbf{What We Did:}
+      \begin{itemize}
+        \item 150 balanced code pairs (300 programs): 50 Easy / 50 Medium / 50 Hard.
+        \item Dual-order permutation for all pairs (2,400 calls total).
+        \item Pairwise, Pointwise, Verbosity, and Fix evaluations.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{Deliberate Boundaries (Why):}
+      \begin{itemize}
+        \item No closed proprietary APIs: focus on local, edge-scale models.
+        \item No self-enhancement test: models did not judge their own code.
+        \item No subjective style/readability metrics: confined to compiler test correctness.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Slide 7
+\begin{frame}{7. System Architecture \& Pipeline}
+  \begin{center}
+    \small
+    \textbf{CodeJudgeBench (2,103 raw pairs)} \\
+    $\downarrow$ \\
+    \textbf{Stratified Sampler} (seed=42, 50 Easy / 50 Med / 50 Hard) $\rightarrow$ \texttt{data/pairs\_150.jsonl} \\
+    $\downarrow$ \\
+    \textbf{Prompt Formatter} (Pairwise, Debias, Pointwise) $\rightarrow$ \texttt{prompts/} \\
+    $\downarrow$ \\
+    \textbf{Inference Core} (\texttt{src/judge.py}: vLLM / Transformers / Ollama) \\
+    $\swarrow$ \hspace{2cm} $\searrow$ \\
+    \textbf{Batch Runner} (Colab T4 GPU) \hspace{1cm} \textbf{Live Demo App} (M3 Pro Ollama) \\
+    $\downarrow$ \hspace{4cm} $\downarrow$ \\
+    \textbf{Metrics Engine} (\texttt{results/}) \hspace{1cm} \textbf{Order-Averaged Bias Filter}
+  \end{center}
+\end{frame}
+
+% Slide 8
+\begin{frame}{8. Dataset Profile (CodeJudgeBench Sample)}
+  \begin{itemize}
+    \item \textbf{Size:} 150 pairs (300 solutions), stratified evenly (50 Easy, 50 Medium, 50 Hard).
+    \item \textbf{Platforms:} 78 LeetCode, 71 AtCoder, 1 Codeforces.
+    \item \textbf{Generators:} Claude 3.7 Sonnet, Gemini 2.5 Flash, Claude 4, Qwen 235B.
+    \item \textbf{Code Length Neutrality:} Correct solutions average 64.8 lines; incorrect average 65.3 lines (neutral baseline).
+  \end{itemize}
+\end{frame}
+
+% Slide 9
+\begin{frame}{9. Models \& Experimental Setup}
+  \begin{itemize}
+    \item \textbf{Models:} Qwen2.5-Coder-3B-Instruct (fp16) and Qwen2.5-Coder-7B-Instruct-AWQ (4-bit).
+    \item \textbf{Hardware:} NVIDIA Tesla T4 (Colab) for batch runs; Apple MacBook Pro M3 Pro (Ollama) for demo.
+    \item \textbf{Decoding:} Greedy ($T=0$), max 16 tokens; Vote@3 uses $T=0.7$, top-$p=0.95$.
+    \item \textbf{Scale:} 2,400 total judge calls, 1.27 GPU-hours, 0.0\% parse failures.
+  \end{itemize}
+\end{frame}
+
+% Slide 10
+\begin{frame}{10. Experiments Overview}
+  \begin{itemize}
+    \item \textbf{Exp 1 (Pairwise):} Both presentation orders $(1,2)$ and $(2,1)$; measures accuracy gap, consistency, and \% A verdicts.
+    \item \textbf{Exp 2 (Verbosity):} Padding incorrect code with docstrings/comments claiming correctness (AST logic preserved).
+    \item \textbf{Exp 3 (Pointwise):} Auditing single code snippets; computes False Acceptance Rate (FAR) and False Rejection Rate (FRR).
+    \item \textbf{Exp 4 (Fixes):} Dual-order averaging (4a), debias prompt (4b), and majority voting of 3 (4c).
+  \end{itemize}
+\end{frame}
+
+% Slide 11
+\begin{frame}{11. Results: Pairwise \& Pointwise Auditing}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \textbf{Exp 1: Pairwise Position Bias}
+      \begin{itemize}
+        \item 3B Correct=A: \textbf{98.7\%} vs Correct=B: \textcolor{red}{\textbf{6.7\%}} (\textbf{+92.0 pp gap})
+        \item 3B Consistency across orders: \textcolor{red}{\textbf{8.0\%}}
+        \item 3B \% A verdicts: \textbf{96.0\%} (138 AA flips of 150)
+        \item 7B gap: \textbf{+83.3 pp}; consistency: \textbf{15.3\%}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{Exp 3: Pointwise Error Rates}
+      \begin{itemize}
+        \item 3B False Acceptance (FAR): \textcolor{red}{\textbf{76.0\%}}
+        \item 7B False Acceptance (FAR): \textcolor{red}{\textbf{72.0\%}}
+        \item Labeled correct: \textbf{79.0\%} (3B) and \textbf{78.3\%} (7B)
+        \item \emph{Takeaway:} Leniency bias allows 3 out of 4 buggy programs to pass review!
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Slide 12
+\begin{frame}{12. Results: Before and After Fixes (Exp 4)}
+  \begin{table}
+    \centering
+    \footnotesize
+    \begin{tabular}{llrrrr}
+      \toprule
+      Model & Method & Accuracy & Consistency & \% A & McNemar $p$ \\
+      \midrule
+      3B & Baseline (Exp 1) & 52.7\% & 8.0\% & 96.0\% & --- \\
+         & \textbf{Order Averaging (4a)} & \textbf{83.3\%} & \textbf{100.0\%} & --- & --- \\
+         & Debias Prompt (4b) & 51.7\% & 3.3\% & 98.3\% & $p=0.453$ \\
+         & Majority of 3 (4c) & 50.3\% & 8.7\% & 65.7\% & $p=0.555$ \\
+      \midrule
+      7B & Baseline (Exp 1) & 54.3\% & 15.3\% & 91.7\% & --- \\
+         & \textbf{Order Averaging (4a)} & \textbf{78.3\%} & \textbf{100.0\%} & --- & --- \\
+         & Debias Prompt (4b) & 53.0\% & 11.3\% & 93.7\% & $p=0.289$ \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+  \textbf{Conclusion:} Prompt debiasing and sampling fail. Only order-averaging provides provable safety.
+\end{frame}
+
+% Slide 13
+\begin{frame}{13. Key Findings \& Limitations}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \textbf{Key Findings:}
+      \begin{enumerate}
+        \item \textbf{Extreme Position Bias:} Small models almost exclusively vote for position A (96\% for 3B).
+        \item \textbf{High False Acceptance:} 76\% FAR in pointwise code auditing.
+        \item \textbf{Order-Averaging is Essential:} Eliminates position bias by construction.
+      \end{enumerate}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{Limitations:}
+      \begin{itemize}
+        \item Difficulty label noise: 82\% conflict across splits in CodeJudgeBench.
+        \item Model scale limited to $\le 7$B parameters.
+        \item Single-language (Python) focus.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Slide 14
+\begin{frame}{14. Live Demo \& Deliverables}
+  \begin{itemize}
+    \item \textbf{Interactive Web App (\texttt{app/app.py} \& \texttt{app/web_demo.py}):} Runs live on Apple M3 Pro via Ollama.
+    \item \textbf{Real-Time Dual-Order Evaluation:} Flags position bias flips on the fly and applies order-averaged filter.
+    \item \textbf{3 Ready-Made Benchmark Cases:}
+      \begin{itemize}
+        \item Example 1 (p015): Severe Position Bias Flip (AA flip on DP).
+        \item Example 2 (p062): Consistent Agreement ($O(N)$ greedy vs $O(N^2)$ DP).
+        \item Example 3 (p014): Algorithmic Complexity Comparison under Distance Constraints.
+      \end{itemize}
+    \item \textbf{Complete Open Repository:} Code, prompts, 2,400 raw execution logs, and IEEE report draft.
+  \end{itemize}
+\end{frame}
+
+\end{document}

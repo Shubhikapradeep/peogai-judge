@@ -1,0 +1,16 @@
+# Core dependencies for analysis and evaluation
+matplotlib>=3.7.0
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Interactive demo app
+gradio>=4.0.0
+
+# LLM inference backends (for Colab/Kaggle batch runs)
+torch>=2.1.0
+transformers>=4.40.0
+accelerate>=0.28.0
+
+# Optional: Quantization & vLLM (Linux/Colab with GPU)
+# bitsandbytes>=0.43.0
+# vllm>=0.6.0

@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEOGAI - Slide Deck (Problem Statement 3)</title>
+<style>
+  :root {
+    --primary: #1e3a8a;
+    --primary-light: #3b82f6;
+    --accent: #dc2626;
+    --success: #16a34a;
+    --bg: #0f172a;
+    --slide-bg: #ffffff;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .slide-container {
+    width: 100%;
+    max-width: 1100px;
+    aspect-ratio: 16 / 9;
+    background: var(--slide-bg);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .slide {
+    display: none;
+    flex: 1;
+    padding: 44px 56px;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .slide.active {
+    display: flex;
+    animation: fadeIn 0.25s ease-in-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .slide-header {
+    margin-bottom: 24px;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .slide-title {
+    font-size: 1.85rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .slide-subtitle {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .slide-content {
+    flex: 1;
+    font-size: 1.12rem;
+    line-height: 1.65;
+    color: #334155;
+  }
+  .slide-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+  }
+  .controls {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    color: #cbd5e1;
+    font-size: 0.9rem;
+  }
+  .btn {
+    background: #1e293b;
+    color: white;
+    border: 1px solid #334155;
+    padding: 8px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: #334155; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .card {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .card h3 { font-size: 1.15rem; color: #0f172a; margin-bottom: 8px; }
+  .highlight { color: var(--accent); font-weight: 700; }
+  .success { color: var(--success); font-weight: 700; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 0.92rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: #f1f5f9; font-weight: 600; color: #1e293b; }
+  ul { margin-left: 24px; margin-bottom: 12px; }
+  li { margin-bottom: 8px; }
+  code, pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.88rem;
+  }
+  pre {
+    padding: 14px;
+    overflow-x: auto;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    border: 1px solid var(--border);
+  }
+  img.slide-img {
+    max-width: 100%;
+    max-height: 280px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<div class="slide-container">
+
+  <!-- SLIDE 1: Title and team -->
+  <div class="slide active">
+    <div style="flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center;">
+      <div style="font-size:0.95rem; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--primary-light); margin-bottom:12px;">Course UE24AM343AB5 | Problem Statement 3</div>
+      <h1 style="font-size:2.35rem; color:var(--primary); line-height:1.25; margin-bottom:16px;">Evaluative Benchmarking of LLM-as-a-Judge for Automated Code Auditing</h1>
+      <p style="font-size:1.2rem; color:var(--text-muted); margin-bottom:32px;">Assessing Position Bias, Leniency Bias, and Mitigation Bounds in Edge-Scale LLMs</p>
+      
+      <div style="display:flex; justify-content:center; gap:36px; text-align:left; max-width:850px; margin:0 auto; font-size:0.95rem;">
+        <div class="card"><strong>P1: Model Setup & Runs</strong><br><span style="color:var(--text-muted)">vLLM / Transformers, 2,400 calls</span></div>
+        <div class="card"><strong>P2: Data & Metrics</strong><br><span style="color:var(--text-muted)">Stratified sampling, figures & tables</span></div>
+        <div class="card"><strong>P3: Demo, Slides & Repo</strong><br><span style="color:var(--text-muted)">Gradio app, M3 Pro Ollama demo</span></div>
+        <div class="card"><strong>P4: IEEE Report</strong><br><span style="color:var(--text-muted)">Conference paper & design synthesis</span></div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>PEOGAI Project</span>
+      <span>Slide 1 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: Problem -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">2. Problem Statement & Motivation</div>
+      <div class="slide-subtitle">Automated Code Review Dilemma</div>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div>
+          <h3>The Context: LLM-as-a-Judge</h3>
+          <ul>
+            <li>Modern CI/CD pipelines need rapid, cost-effective automated code review to catch bugs before deployment.</li>
+            <li><strong>LLM-as-a-Judge</strong> uses language models to grade candidate solutions, review PRs, and rank implementations.</li>
+            <li>Large commercial models (GPT-4) are expensive, high-latency, and leak proprietary code off-premise.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>The Core Question & Risk</h3>
+          <div class="card" style="border-left:4px solid var(--accent); margin-bottom:14px;">
+            <p><strong>The Core Vulnerability:</strong> Can small, open-source models (≤ 7B) running locally on a laptop evaluate code reliably?</p>
+          </div>
+          <ul>
+            <li>Does their judgment reflect <strong>actual code semantics</strong> or superficial cues?</li>
+            <li>If an evaluator suffers from <strong>position bias</strong>, flawed code gets merged simply because it was presented as "Answer A".</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Problem & Context</span>
+      <span>Slide 2 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: Literature summary -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">3. Literature Summary & Foundations</div>
+      <div class="slide-subtitle">Related Work & Prior Benchmarks</div>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div class="card">
+          <h3>MT-Bench & Chatbot Arena (Zheng et al., 2023)</h3>
+          <ul>
+            <li>First formalized LLM-as-a-judge for natural language dialogues.</li>
+            <li>Identified <strong>position bias</strong>, <strong>verbosity bias</strong>, and <strong>self-enhancement bias</strong> in GPT-4 and Claude.</li>
+            <li>Left code correctness evaluation largely unaddressed.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>CodeJudgeBench (Chen et al., 2024)</h3>
+          <ul>
+            <li>Built an extensive benchmark of code generation and debugging pairs.</li>
+            <li>Ground-truth correctness established via <strong>automated hidden unit tests</strong>, not subjective human ratings.</li>
+            <li>Provides the baseline dataset for our study.</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:16px;" class="card">
+        <strong>"Bias in the Loop" (Stureborg et al., 2024):</strong> Explored length and style biases in proprietary 70B+ LLMs. Edge-scale (&le; 7B) models remained unexplored in functional code auditing.
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Literature Foundations</span>
+      <span>Slide 3 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: Research gaps and our contribution -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">4. Research Gaps & Our Contributions</div>
+      <div class="slide-subtitle">Bridging Theory to Local Code Auditing</div>
+    </div>
+    <div class="slide-content">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:25%;">Dimension</th>
+            <th style="width:37%;">Prior Work</th>
+            <th style="width:38%;">Our Contribution</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Model Scale</strong></td>
+            <td>Giant proprietary APIs (GPT-4, Claude 3.5, 70B+)</td>
+            <td><strong>Edge-scale models (3B & 7B)</strong> deployable locally on a single Mac M3 Pro.</td>
+          </tr>
+          <tr>
+            <td><strong>Ground Truth</strong></td>
+            <td>Subjective human preference or win-rates</td>
+            <td><strong>Strict binary ground truth</strong>: compiler-verified unit test execution.</td>
+          </tr>
+          <tr>
+            <td><strong>Domain</strong></td>
+            <td>General NLP / conversational dialogues</td>
+            <td><strong>Algorithmic code correctness</strong> across LeetCode & AtCoder tasks.</td>
+          </tr>
+          <tr>
+            <td><strong>Mitigation Analysis</strong></td>
+            <td>Assumed prompting or voting solves bias</td>
+            <td><strong>Proved prompt fixes fail</strong>; designed dual-order averaging defense.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="slide-footer">
+      <span>Research Gaps & Contributions</span>
+      <span>Slide 4 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Research questions -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">5. Research Questions (RQs)</div>
+      <div class="slide-subtitle">Core Empirical Hypotheses</div>
+    </div>
+    <div class="slide-content">
+      <div class="card" style="margin-bottom:12px;">
+        <strong>RQ1 (Pairwise & Pointwise Accuracy):</strong> How accurately can open-source 3B and 7B models determine code correctness under zero-shot prompt evaluation?
+      </div>
+      <div class="card" style="margin-bottom:12px;">
+        <strong>RQ2 (Position Bias):</strong> To what extent does the order of presentation sway the judge? How frequently do verdicts flip when the code order is reversed?
+      </div>
+      <div class="card" style="margin-bottom:12px;">
+        <strong>RQ3 (False Acceptance Rate):</strong> In single-code auditing (pointwise), what fraction of buggy solutions are erroneously approved (FAR)?
+      </div>
+      <div class="card">
+        <strong>RQ4 (Mitigation Bounds):</strong> Can explicit prompt debiasing or majority voting ($N=3$) eliminate position bias, or is architectural order-averaging mandatory?
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Research Questions</span>
+      <span>Slide 5 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: Scope -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">6. Scope: What We Did and Did Not Do</div>
+      <div class="slide-subtitle">Clear Methodological Boundaries</div>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div class="card" style="border-left:4px solid var(--success);">
+          <h3>What We Did</h3>
+          <ul>
+            <li><strong>150 balanced code pairs (300 programs):</strong> 50 Easy, 50 Medium, 50 Hard.</li>
+            <li><strong>Full dual-order evaluation:</strong> Tested both Order 1 $(1,2)$ and Order 2 $(2,1)$ across all pairs.</li>
+            <li><strong>4 comprehensive experiments:</strong> Pairwise, Verbosity, Pointwise, and Fixes.</li>
+            <li><strong>2,400 total judge calls:</strong> Statistically evaluated with 95% Wilson CIs and McNemar paired tests.</li>
+          </ul>
+        </div>
+        <div class="card" style="border-left:4px solid var(--accent);">
+          <h3>What We Did Not Do (Why)</h3>
+          <ul>
+            <li><strong>No proprietary closed APIs:</strong> Capped at 7B open weights to ensure local offline feasibility.</li>
+            <li><strong>No self-enhancement test:</strong> Models did not judge their own self-generated code.</li>
+            <li><strong>No subjective quality metrics:</strong> Excluded stylistic readability and security scores due to lack of objective test-suite ground truth.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Project Scope</span>
+      <span>Slide 6 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: System design -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">7. System Design & Evaluation Pipeline</div>
+      <div class="slide-subtitle">Modular Architectural Workflow</div>
+    </div>
+    <div class="slide-content">
+      <pre>
+CodeJudgeBench (2,103 raw pairs)
+          │
+          ▼
+Stratified Sampler (seed=42, 50 Easy / 50 Med / 50 Hard) ──> data/pairs_150.jsonl
+          │
+          ▼
+Prompt Formatter (Pairwise, Debias, Pointwise) ──────────> prompts/
+          │
+          ▼
+Inference Core (src/judge.py: vLLM / Transformers / Ollama)
+          │
+   ┌──────┴───────────────────────┐
+   ▼                               ▼
+Batch Runner (Colab T4 GPU)     Live Demo App (MacBook M3 Pro Ollama)
+   │                               │
+   ▼                               ▼
+Raw JSONL Logs (results/raw/)    Dual-Order Runner (app/app.py & web_demo.py)
+   │                               │
+   ▼                               ▼
+Metrics & Plots Engine           Position Bias Detector & Order-Averaged Filter
+   │
+   ▼
+IEEE Report & Slide Deck
+      </pre>
+    </div>
+    <div class="slide-footer">
+      <span>System Architecture</span>
+      <span>Slide 7 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Data stats -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">8. Dataset Profile (CodeJudgeBench Sample)</div>
+      <div class="slide-subtitle">Curated & Balanced Code Pairs</div>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div>
+          <h3>Stratification Breakdown</h3>
+          <ul>
+            <li><strong>Sample Size:</strong> 150 pairs (300 candidate solutions), seed 42.</li>
+            <li><strong>Difficulty:</strong> Exactly 50 Easy, 50 Medium, 50 Hard.</li>
+            <li><strong>Platforms:</strong> 78 LeetCode, 71 AtCoder, 1 Codeforces.</li>
+            <li><strong>Generator Distribution:</strong> Claude 3.7 Sonnet (30), Gemini 2.5 Flash (36), Gemini 2.5 Flash-Lite (28), Claude 4 (32), Qwen 235B (14), Gemini 2.5 Pro (10).</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Code Length Neutrality</h3>
+          <ul>
+            <li><strong>Correct solutions:</strong> 64.8 average lines</li>
+            <li><strong>Incorrect solutions:</strong> 65.3 average lines</li>
+            <li><em>Crucial design feature:</em> Eliminates length disparity as a confounder in baseline tests.</li>
+            <li><strong>Answer format:</strong> Isolated code only (last fenced Markdown block), removing conversational hints.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Data Characteristics</span>
+      <span>Slide 8 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: Models and setup -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">9. Models & Experimental Setup</div>
+      <div class="slide-subtitle">Reproducible Hardware & Inference Parameters</div>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div class="card">
+          <h3>Evaluator Models</h3>
+          <ul>
+            <li><strong>Qwen2.5-Coder-3B-Instruct:</strong> fp16 via vLLM on Colab T4; Q4_K_M GGUF on MacBook M3 Pro (Ollama).</li>
+            <li><strong>Qwen2.5-Coder-7B-Instruct:</strong> 4-bit AWQ quantized via vLLM on Colab T4.</li>
+            <li>Same architecture family isolates <strong>scale</strong> as the single independent variable.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Decoding & Scale Parameters</h3>
+          <ul>
+            <li><strong>Greedy decoding ($T=0$):</strong> Exp 1, 2, 3, and 4b; max 16 new tokens.</li>
+            <li><strong>Sampling ($T=0.7$, $N=3$):</strong> Exp 4c majority voting.</li>
+            <li><strong>Compute Cost:</strong> 2,400 total calls in 1.27 GPU-hours on single Tesla T4.</li>
+            <li><strong>Parse robustness:</strong> 0.0% parse failures across all runs.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Experimental Setup</span>
+      <span>Slide 9 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: Experiments overview -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">10. Experiments Overview</div>
+      <div class="slide-subtitle">Four Targeted Experimental Regimes</div>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div class="card">
+          <h3>Exp 1: Pairwise & Position Bias</h3>
+          <p>Present candidates in both orders: $(1,2)$ and $(2,1)$. Measure accuracy gap, order consistency, and share of `A` verdicts.</p>
+        </div>
+        <div class="card">
+          <h3>Exp 2: Verbosity Perturbation</h3>
+          <p>Pad incorrect code with docstrings/comments asserting correctness (AST-equivalent logic). Measure shift in win rate.</p>
+        </div>
+        <div class="card">
+          <h3>Exp 3: Pointwise Single-Code</h3>
+          <p>Evaluate each of 300 answers individually (`correct` vs `incorrect`). Calculate False Acceptance Rate (FAR) & FRR.</p>
+        </div>
+        <div class="card">
+          <h3>Exp 4: Position Bias Mitigations</h3>
+          <p>Compare baseline against <strong>4a</strong>: Order-Averaging, <strong>4b</strong>: Debias Prompt, and <strong>4c</strong>: Vote@3 at $T=0.7$.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Experimental Regimes</span>
+      <span>Slide 10 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 11: Results: pairwise and pointwise -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">11. Results: Pairwise & Pointwise Auditing</div>
+      <div class="slide-subtitle">Exp 1 & Exp 3 Empirical Findings</div>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div>
+          <h3>Exp 1: Pairwise Position Bias</h3>
+          <table>
+            <tr><th>Metric</th><th>3B Model</th><th>7B Model</th></tr>
+            <tr><td>Acc (Correct=A)</td><td><strong>98.7%</strong></td><td><strong>96.0%</strong></td></tr>
+            <tr><td>Acc (Correct=B)</td><td><span class="highlight">6.7%</span></td><td><span class="highlight">12.7%</span></td></tr>
+            <tr><td>Accuracy Gap</td><td><span class="highlight">+92.0 pp</span></td><td><span class="highlight">+83.3 pp</span></td></tr>
+            <tr><td>Consistency</td><td><span class="highlight">8.0%</span></td><td><span class="highlight">15.3%</span></td></tr>
+            <tr><td>Share of 'A' Verdicts</td><td><strong>96.0%</strong></td><td><strong>91.7%</strong></td></tr>
+            <tr><td>AA Flips (out of 150)</td><td><strong>138 pairs</strong></td><td><strong>126 pairs</strong></td></tr>
+          </table>
+        </div>
+        <div>
+          <h3>Exp 3: Pointwise Auditing</h3>
+          <table>
+            <tr><th>Metric</th><th>3B Model</th><th>7B Model</th></tr>
+            <tr><td>Overall Accuracy</td><td>53.0%</td><td>56.3%</td></tr>
+            <tr><td>False Acceptance (FAR)</td><td><span class="highlight">76.0%</span></td><td><span class="highlight">72.0%</span></td></tr>
+            <tr><td>False Rejection (FRR)</td><td>18.0%</td><td>15.3%</td></tr>
+            <tr><td>% Labeled Correct</td><td><strong>79.0%</strong></td><td><strong>78.3%</strong></td></tr>
+          </table>
+          <p style="font-size:0.88rem; margin-top:8px; color:var(--text-muted);">
+            <em>Alarming outcome:</em> 3 out of 4 buggy programs falsely pass code review due to extreme leniency bias!
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Pairwise & Pointwise Results</span>
+      <span>Slide 11 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 12: Results: before and after fixes -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">12. Results: Before and After Fixes (Exp 4)</div>
+      <div class="slide-subtitle">Evaluating Mitigation Strategies</div>
+    </div>
+    <div class="slide-content">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Mitigation Method</th>
+            <th>Accuracy</th>
+            <th>Consistency</th>
+            <th>% A Verdicts</th>
+            <th>Coverage</th>
+            <th>McNemar p</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td rowspan="4"><strong>3B</strong></td>
+            <td>Baseline (Exp 1)</td>
+            <td>52.7%</td>
+            <td>8.0%</td>
+            <td>96.0%</td>
+            <td>100.0%</td>
+            <td>—</td>
+          </tr>
+          <tr style="background:#f0fdf4;">
+            <td><strong>Order Averaging (4a)</strong></td>
+            <td><strong class="success">83.3%</strong></td>
+            <td><strong class="success">100.0%</strong></td>
+            <td>—</td>
+            <td>8.0%</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Debias Prompt (4b)</td>
+            <td>51.7%</td>
+            <td>3.3%</td>
+            <td>98.3%</td>
+            <td>100.0%</td>
+            <td>p = 0.453 (No effect)</td>
+          </tr>
+          <tr>
+            <td>Majority of 3 (4c)</td>
+            <td>50.3%</td>
+            <td>8.7%</td>
+            <td>65.7%</td>
+            <td>100.0%</td>
+            <td>p = 0.555 (No effect)</td>
+          </tr>
+          <tr style="border-top:2px solid #cbd5e1;">
+            <td rowspan="3"><strong>7B</strong></td>
+            <td>Baseline (Exp 1)</td>
+            <td>54.3%</td>
+            <td>15.3%</td>
+            <td>91.7%</td>
+            <td>100.0%</td>
+            <td>—</td>
+          </tr>
+          <tr style="background:#f0fdf4;">
+            <td><strong>Order Averaging (4a)</strong></td>
+            <td><strong class="success">78.3%</strong></td>
+            <td><strong class="success">100.0%</strong></td>
+            <td>—</td>
+            <td>15.3%</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Debias Prompt (4b)</td>
+            <td>53.0%</td>
+            <td>11.3%</td>
+            <td>93.7%</td>
+            <td>100.0%</td>
+            <td>p = 0.289 (No effect)</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size:0.88rem; color:var(--text-muted); margin-top:8px;">
+        <strong>Finding:</strong> Prompts and sampling cannot fix structural attention bias. Only architectural order-averaging guarantees safety.
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Mitigation Results</span>
+      <span>Slide 12 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 13: Key findings and limitations -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">13. Key Findings & Limitations</div>
+      <div class="slide-subtitle">Summary of Empirical Insights</div>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div>
+          <h3>Core Findings</h3>
+          <ol>
+            <li><strong>Extreme Position Bias:</strong> 3B picked position A in 96% of calls; 7B in 92%. In 92% of pairs, swapping candidate order flipped the decision!</li>
+            <li><strong>Severe Leniency in Pointwise Auditing:</strong> False Acceptance Rate reached 76%. Small LLMs rubber-stamp broken code.</li>
+            <li><strong>Order-Averaging is Mandatory:</strong> The only provable defense, boosting accuracy to 83.3% on agreed decisions.</li>
+          </ol>
+        </div>
+        <div class="card">
+          <h3>Limitations & Constraints</h3>
+          <ul>
+            <li><strong>Difficulty Label Noise:</strong> 82% of problems shared across generator splits had conflicting difficulty ratings in CodeJudgeBench.</li>
+            <li><strong>Language & Scope:</strong> Evaluated on Python competitive programming; general enterprise codebases may have different token dynamics.</li>
+            <li><strong>Model Scale Ceiling:</strong> Restricted to &le; 7B parameters.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Findings & Limitations</span>
+      <span>Slide 13 / 14</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 14: Live demo -->
+  <div class="slide">
+    <div class="slide-header">
+      <div class="slide-title">14. Live Demonstration & Repository</div>
+      <div class="slide-subtitle">System Verification & Hands-On Inspection</div>
+    </div>
+    <div class="slide-content">
+      <div class="grid-2">
+        <div class="card">
+          <h3>Demonstration Architecture</h3>
+          <ul>
+            <li><strong>Gradio Application (`app/app.py`):</strong> Real-time dual-order evaluator.</li>
+            <li><strong>Standalone Server (`app/web_demo.py`):</strong> Zero-dependency instant web preview on port 7860.</li>
+            <li><strong>Apple M3 Pro Inference:</strong> Local Ollama runtime executing Qwen2.5-Coder-3B.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Curated Demo Cases</h3>
+          <ul>
+            <li><strong>Case 1 (p015):</strong> Severe Position Bias Flip (AA Flip on DP Subsequence Sum).</li>
+            <li><strong>Case 2 (p062):</strong> Consistent Agreement (Greedy $O(N)$ vs DP $O(N^2)$).</li>
+            <li><strong>Case 3 (p014):</strong> Algorithmic Complexity Comparison under Distance Constraints.</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:20px; text-align:center;">
+        <span class="btn" style="background:var(--primary); font-size:1rem; padding:10px 24px;">🚀 Launch Live Demo: python -m app.app</span>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Live Demo</span>
+      <span>Slide 14 / 14</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Presentation Controls -->
+<div class="controls">
+  <button class="btn" onclick="prevSlide()">◀ Previous</button>
+  <span id="slide-num">Slide 1 of 14</span>
+  <button class="btn" onclick="nextSlide()">Next ▶</button>
+  <button class="btn" onclick="toggleFullScreen()">⛶ Fullscreen</button>
+</div>
+
+<script>
+  let currentSlide = 0;
+  const slides = document.querySelectorAll('.slide');
+  const slideNumDisplay = document.getElementById('slide-num');
+
+  function updateSlide() {
+    slides.forEach((s, idx) => {
+      s.classList.toggle('active', idx === currentSlide);
+    });
+    slideNumDisplay.innerText = `Slide ${currentSlide + 1} of ${slides.length}`;
+  }
+
+  function nextSlide() {
+    if (currentSlide < slides.length - 1) {
+      currentSlide++;
+      updateSlide();
+    }
+  }
+
+  function prevSlide() {
+    if (currentSlide > 0) {
+      currentSlide--;
+      updateSlide();
+    }
+  }
+
+  function toggleFullScreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      nextSlide();
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      prevSlide();
+    } else if (e.key === 'f' || e.key === 'F') {
+      toggleFullScreen();
+    }
+  });
+</script>
+
+</body>
+</html>
