@@ -195,6 +195,11 @@ HTML_PAGE = """<!DOCTYPE html>
       <img class="chart" src="/figures/f4_verbosity.png" alt="Fig 4 Verbosity">
     </div>
   </div>
+
+  <div class="card" style="margin-top:20px;">
+    <h2 style="margin-bottom:14px;">Benchmark Tables (Data, Pairwise, Pointwise, Fixes, Verbosity, Difficulty)</h2>
+    BENCHMARK_TABLES_HTML
+  </div>
 </div>
 
 <!-- TAB 3: ARCHITECTURE -->
@@ -311,11 +316,54 @@ setTimeout(loadCase, 100);
 """
 
 
+def md_table_to_html(md_text: str) -> str:
+    lines = [l.strip() for l in md_text.strip().splitlines() if l.strip()]
+    if not lines:
+        return ""
+    title = ""
+    start_idx = 0
+    if lines[0].startswith("**") and lines[0].endswith("**"):
+        t_text = lines[0].strip("*")
+        title = f'<h4 style="margin-top:16px; margin-bottom:8px; color:#1e3a8a;">{t_text}</h4>'
+        start_idx = 1
+    table_lines = [l for l in lines[start_idx:] if not l.startswith("_")]
+    if len(table_lines) < 2:
+        return title
+    headers = [c.strip() for c in table_lines[0].split("|")[1:-1]]
+    rows = []
+    for l in table_lines[2:]:
+        cols = [c.strip() for c in l.split("|")[1:-1]]
+        if cols:
+            rows.append(cols)
+    out = [title, "<table><thead><tr>"]
+    for h in headers:
+        out.append(f"<th>{h}</th>")
+    out.append("</tr></thead><tbody>")
+    for r in rows:
+        out.append("<tr>")
+        for c in r:
+            out.append(f"<td>{c}</td>")
+        out.append("</tr>")
+    out.append("</tbody></table>")
+    return "".join(out)
+
+
+def get_all_tables_html() -> str:
+    tables = ["t0_data", "t1_pairwise", "t2_pointwise", "t3_fixes", "t4_verbosity", "t5_difficulty"]
+    parts = []
+    for t in tables:
+        p = TABLES_DIR / f"{t}.md"
+        if p.exists():
+            parts.append(md_table_to_html(p.read_text()))
+    return "".join(parts)
+
+
 class DemoHTTPHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
         if url.path == "/" or url.path == "/index.html":
             html = HTML_PAGE.replace("EXAMPLES_DATA_JSON", json.dumps(DEMO_EXAMPLES))
+            html = html.replace("BENCHMARK_TABLES_HTML", get_all_tables_html())
             ex0 = DEMO_EXAMPLES[0] if DEMO_EXAMPLES else {}
             html = html.replace("INIT_PROBLEM", ex0.get("problem", ""))
             html = html.replace("INIT_CAND1", ex0.get("candidate_1", ""))

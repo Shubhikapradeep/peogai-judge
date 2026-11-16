@@ -197,12 +197,14 @@
 % Slide 13
 \begin{frame}{13. Key Findings \& Limitations}
   \begin{columns}
-    \begin{column}{0.5\textwidth}
-      \textbf{Key Findings:}
+    \begin{column}{0.55\textwidth}
+      \textbf{Five Main Findings:}
       \begin{enumerate}
-        \item \textbf{Extreme Position Bias:} Small models almost exclusively vote for position A (96\% for 3B).
-        \item \textbf{High False Acceptance:} 76\% FAR in pointwise code auditing.
-        \item \textbf{Order-Averaging is Essential:} Eliminates position bias by construction.
+        \item \textbf{Position Bias:} 3B voted A in 96\% of calls; rare B votes carry true signal (83.3\% right, $p=0.039$).
+        \item \textbf{Pointwise Leniency:} 3B accepts 76\% of buggy code (FAR), approving ~79\% of answers.
+        \item \textbf{Scale (3B vs 7B):} 7B is less biased ($p=0.011$) but no more accurate ($p=0.405$).
+        \item \textbf{Fixes Fail:} Debias prompt worsened 3B bias ($p=0.016$); only order-averaging ensures safety.
+        \item \textbf{Verbosity (Exp 2):} Comments only amplify the default to position A ($p=0.004$).
       \end{enumerate}
     \end{column}
     \begin{column}{0.5\textwidth}

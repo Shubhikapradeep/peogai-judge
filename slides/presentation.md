@@ -203,13 +203,15 @@ IEEE Report & Slide Deck
 
 ## 13. Key Findings & Limitations
 
-- **Core Finding 1: Extreme First-Position Bias.** Small models almost exclusively select position A (96% for 3B, 92% for 7B). Swapping presentation order causes 92% of verdicts to flip.
-- **Core Finding 2: High False Acceptance Rate.** Pointwise FAR exceeds 72–76%. Small LLMs are excessively lenient, rendering them unsafe for standalone CI/CD pull request gatekeeping.
-- **Core Finding 3: Architectural Defense is Essential.** Order-averaging raises accuracy to 83.3% and guarantees consistency, filtering out unconfident pairs.
+- **Finding 1 (Position Bias):** 3B voted A in 96.0% and 7B in 91.7% of calls; overall accuracy (52.7% / 54.3%) is not better than chance. Rare B votes carry true signal (83.3% right on 3B, $p=0.039$).
+- **Finding 2 (Pointwise Leniency):** 3B accepts 76.0% and 7B accepts 72.0% of buggy code (FAR), approving ~79% of all submissions.
+- **Finding 3 (Scale Comparison):** 7B is less position-biased (91.7% vs 96.0% A, $p=0.011$), but no more accurate (54.3% vs 52.7%, $p=0.405$).
+- **Finding 4 (Fixes Fail):** Debias prompt worsened 3B bias (98.3% A, $p=0.016$); vote@3 spread votes without accuracy gain (50.3%, $p=0.555$). Only order-averaging ensures safety (83.3% acc, 8.0% coverage).
+- **Finding 5 (Verbosity Padding):** Comment padding on flawed code only boosted wins in position A (93.3% $\rightarrow$ 99.3%, $p=0.004$) but dropped to 0% in position B, proving comments only amplify position bias.
 - **Limitations:**
   - Difficulty labels in CodeJudgeBench disagree across generator splits for 82% of shared problems.
   - Capped at 7B parameter models; evaluated on Python competitive programming.
-  - Truncation on programs exceeding context length.
+  - Single-turn zero-shot code auditing scope.
 
 ---
 

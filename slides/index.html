@@ -631,11 +631,13 @@ IEEE Report & Slide Deck
     <div class="slide-content">
       <div class="grid-2">
         <div>
-          <h3>Core Findings</h3>
-          <ol>
-            <li><strong>Extreme Position Bias:</strong> 3B picked position A in 96% of calls; 7B in 92%. In 92% of pairs, swapping candidate order flipped the decision!</li>
-            <li><strong>Severe Leniency in Pointwise Auditing:</strong> False Acceptance Rate reached 76%. Small LLMs rubber-stamp broken code.</li>
-            <li><strong>Order-Averaging is Mandatory:</strong> The only provable defense, boosting accuracy to 83.3% on agreed decisions.</li>
+          <h3>Five Main Findings (Statistical Rigor)</h3>
+          <ol style="font-size:0.95rem; line-height:1.6;">
+            <li><strong>Severe Position Bias (Exp 1):</strong> 3B voted A in 96.0% and 7B in 91.7% of calls; overall accuracy (52.7% / 54.3%) is not better than chance. Rare B votes carry true signal (83.3% right on 3B, p=0.039).</li>
+            <li><strong>Pointwise Leniency (Exp 3):</strong> 3B accepts 76.0% and 7B accepts 72.0% of buggy code (FAR), calling ~79% of all answers correct.</li>
+            <li><strong>Scale Effect (3B vs 7B):</strong> 7B is less position-biased (91.7% vs 96.0% A, p=0.011), but no more accurate (54.3% vs 52.7%, p=0.405).</li>
+            <li><strong>Fixes Fail (Exp 4):</strong> Debias prompt worsened 3B bias (98.3% A, p=0.016); vote@3 spread votes without accuracy gain (50.3%). Only order-averaging ensures safety (83.3% acc, 8.0% coverage).</li>
+            <li><strong>Verbosity Padding (Exp 2):</strong> Adding comments to wrong code boosted wins in position A (93.3% &rarr; 99.3%, p=0.004) but dropped to 0% in position B, proving comments only amplify position bias.</li>
           </ol>
         </div>
         <div class="card">

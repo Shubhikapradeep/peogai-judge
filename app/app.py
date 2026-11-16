@@ -339,7 +339,9 @@ def build_app():
                         gr.Image(value=fig4_path, label="Fig 4: Verbosity Padding Effect (Exp 2)")
 
                 gr.Markdown("### Full Benchmark Numerical Tables")
-                with gr.Accordion("Table 1: Pairwise Accuracy & Position Bias", open=True):
+                with gr.Accordion("Table 0: Dataset Composition & Balance (P2)", open=True):
+                    gr.Markdown(read_table_markdown("t0_data"))
+                with gr.Accordion("Table 1: Pairwise Accuracy & Position Bias", open=False):
                     gr.Markdown(read_table_markdown("t1_pairwise"))
                 with gr.Accordion("Table 2: Pointwise Auditing (FAR & FRR)", open=False):
                     gr.Markdown(read_table_markdown("t2_pointwise"))
