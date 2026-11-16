@@ -40,7 +40,7 @@ for f in sorted(glob.glob(sys.argv[1] + "/*_smoke.jsonl")):
     bad = sum(not r["parse_ok"] for r in rows)
     print(f, f"parse failures {bad}/{len(rows)}", [r["raw"][:30] for r in rows[:4]])
     if bad > len(rows) * 0.3:
-        sys.exit("!!! too many parse failures in smoke test; send this log to Claude")
+        sys.exit("!!! too many parse failures in smoke test; send this log to the team")
 EOF
 
 # ---- full runs, most important first (a session cut-off loses the least)

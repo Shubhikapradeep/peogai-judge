@@ -247,7 +247,11 @@ def check_data(raw: dict, data_path: Path) -> dict:
         files[f"{exp}_{model}"] = {"rows": len(rows), "mismatched": len(bad), "checked_by": "question_id" if exact else "difficulty",
                                    "examples": bad[:5]}
         ok &= not bad
-    return {"ok": ok, "data": str(data_path), "files": files}
+    try:  # store a repo-relative path, not a machine-specific absolute one
+        shown = str(data_path.resolve().relative_to(ROOT))
+    except ValueError:
+        shown = data_path.name
+    return {"ok": ok, "data": shown, "files": files}
 
 
 def compute(raw: dict) -> dict:

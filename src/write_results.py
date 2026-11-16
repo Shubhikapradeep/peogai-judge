@@ -81,6 +81,38 @@ def rare_letter(b):
     return "B" if b["pct_A"]["p"] is not None and b["pct_A"]["p"] > 0.5 else "A"
 
 
+def rare_signal(r: R) -> list[str]:
+    """Models whose rare verdicts (against their default letter) are significantly more often right."""
+    out = []
+    for m in r.models:
+        b = r.pw("exp1", m)
+        L = rare_letter(b)
+        x, p = b[f"precision_{L}"], b[f"precision_{L}_p"]
+        if x["n"] >= 5 and sig(p) and x["p"] > 0.5:
+            out.append(f"{NAME[m]} is right in {x['k']} of its {x['n']} {L} verdicts ({pc(x)}, {pv(p)})")
+    return out
+
+
+READS_CODE = " The model does read the code, but its default letter drowns that signal out."
+
+
+def verbosity_pattern(r: R, m: str, v: dict) -> str:
+    """Classify Exp 2 by position. cs = wrong answer shown as A, cf = shown as B."""
+    pA, pB = v["test_cs"]["p"], v["test_cf"]["p"]
+    dA = v["padded_cs"]["p"] - v["baseline_cs"]["p"]
+    dB = v["padded_cf"]["p"] - v["baseline_cf"]["p"]
+    up_a, up_b = sig(pA) and dA > 0, sig(pB) and dB > 0
+    down = (sig(pA) and dA < 0) or (sig(pB) and dB < 0)
+    if up_a and up_b:
+        return "both_up"
+    if up_a or up_b:
+        pos = "A" if up_a else "B"
+        e2 = r.pw("exp2", m)
+        default = "A" if e2 and e2["pct_A"]["p"] is not None and e2["pct_A"]["p"] > 0.5 else "B"
+        return f"default_{pos}" if pos == default else f"only_{pos}"
+    return "down" if down else "none"
+
+
 def finding_position(r: R):
     if not r.models:
         return None
@@ -102,15 +134,9 @@ def finding_position(r: R):
         s += "Overall pairwise accuracy is " + join(
             f"{pc(B[m]['accuracy'])} for {NAME[m]}, {chance(B[m]['acc_vs_chance_p'], B[m]['accuracy']['p'])}"
             for m in r.models) + "."
-    signal = []
-    for m in r.models:
-        L = rare_letter(B[m])
-        x, p = B[m][f"precision_{L}"], B[m][f"precision_{L}_p"]
-        if x["n"] >= 5 and sig(p) and x["p"] > 0.5:
-            signal.append(f"{NAME[m]} is right in {x['k']} of its {x['n']} {L} verdicts ({pc(x)}, {pv(p)})")
+    signal = rare_signal(r)
     if signal:
-        s += (" The rare verdicts against the default still carry signal: " + join(signal) +
-              ". The model does read the code, but its default letter drowns that signal out.")
+        s += " The rare verdicts against the default still carry signal: " + join(signal) + "." + READS_CODE
     return s
 
 
@@ -228,14 +254,21 @@ def finding_verbosity(r: R):
         split = (f" When the padded answer is shown as A it wins {pc(v['baseline_cs'])} -> {pc(v['padded_cs'])} ({pv(pA)}); "
                  f"when it is shown as B, {pc(v['baseline_cf'])} -> {pc(v['padded_cf'])} ({pv(pB)}).")
         e2, e1 = r.pw("exp2", m), r.pw("exp1", m)
-        if sig(pA) and dA > 0 and not (sig(pB) and dB > 0):
-            tail = (" The rise comes only from position A, so padding strengthens the judge's default to A"
+        pat = verbosity_pattern(r, m, v)
+        if pat.startswith("default_"):
+            L = pat[-1]
+            tail = (f" The rise comes only from position {L}, so padding strengthens the judge's default to {L}"
                     + (f" ({pc(e1['pct_A'])} -> {pc(e2['pct_A'])} A verdicts)" if e1 and e2 else "")
                     + " rather than making it prefer the padded answer.")
-        elif sig(pA) and sig(pB) and dA > 0 and dB > 0:
+        elif pat.startswith("only_"):
+            tail = (f" The padded answer gains only when shown as {pat[-1]}, against the judge's default letter, "
+                    "so the judge does prefer the commented code in that position.")
+        elif pat == "both_up":
             tail = " The padded answer gains in both positions, so the judge does prefer the commented code."
+        elif pat == "down":
+            tail = " The padded answer wins less often, so the judge, if anything, penalises the padding."
         else:
-            tail = " Neither position shows a clear preference for the padded answer."
+            tail = " Neither position shows a significant change, so padding has no measurable effect."
         out.append(head + split + tail)
     n = r.D.get("exp2_padded_longer_than_correct") if r.D else None
     if n:
@@ -249,6 +282,85 @@ def findings(r: R):
                         finding_verbosity(r)) if f]
 
 
+def headlines(r: R) -> list[str]:
+    """One short sentence per finding, for the report's summary list and the slides."""
+    H = []
+    if r.models:
+        B = {m: r.pw("exp1", m) for m in r.models}
+        above = [m for m in r.models if sig(B[m]["acc_vs_chance_p"]) and B[m]["accuracy"]["p"] > 0.5]
+        below = [m for m in r.models if sig(B[m]["acc_vs_chance_p"]) and B[m]["accuracy"]["p"] < 0.5]
+        acc = join(f"{pc(B[m]['accuracy'], 0)} for {NAME[m]}" for m in r.models)
+        if not above and not below:
+            verdict = "is not significantly better than chance"
+        elif len(above) == len(r.models):
+            verdict = "is significantly above chance"
+        else:
+            verdict = "is " + join(
+                ("significantly above chance" if m in above else "significantly below chance" if m in below
+                 else "not significantly better than chance") + f" for {NAME[m]}" for m in r.models)
+        H.append("In pairwise judging the judges answer A in " + join(f"{pc(B[m]['pct_A'], 0)} ({NAME[m]})" for m in r.models)
+                 + f" of calls, and their accuracy ({acc}) {verdict}."
+                 + (" Their rare answers against that default are usually right." if rare_signal(r) else ""))
+    if r.p_models:
+        Q = {m: r.pt(m) for m in r.p_models}
+        H.append("In pointwise judging they call " + join(f"{pc(Q[m]['pct_said_correct'], 0)} ({NAME[m]})" for m in r.p_models)
+                 + " of answers correct and accept " + join(f"{pc(Q[m]['far'], 0)} ({NAME[m]})" for m in r.p_models)
+                 + " of buggy solutions.")
+    if len(r.models) == 2:
+        a, b = r.pw("exp1", "3b"), r.pw("exp1", "7b")
+        tA, tC, tAcc = r.test("pctA_3b_vs_7b"), r.test("consistency_3b_vs_7b"), r.test("exp1_3b_vs_7b")
+        less = (sig(tA["p"]) and abs(b["pct_A"]["p"] - 0.5) < abs(a["pct_A"]["p"] - 0.5)) or \
+               (sig(tC["p"]) and b["consistency"]["p"] > a["consistency"]["p"])
+        H.append("The 7B judge is " + ("less" if less else "not significantly less") + " position-biased than the 3B judge, "
+                 + ("but no more accurate." if not sig(tAcc["p"]) else "and its accuracy differs significantly."))
+    if r.models:
+        B = {m: r.pw("exp1", m) for m in r.models}
+        parts = ["order averaging decides only " + join(f"{pc(B[m]['orderavg_coverage'], 0)} ({NAME[m]})" for m in r.models)
+                 + " of pairs"]
+        worse = [m for m in r.models if r.pw("exp4b", m) and sig(r.test(f"pctA_exp1_vs_exp4b_{m}")["p"])
+                 and abs(r.pw("exp4b", m)["pct_A"]["p"] - 0.5) > abs(B[m]["pct_A"]["p"] - 0.5)]
+        better = [m for m in r.models if r.pw("exp4b", m) and sig(r.test(f"pctA_exp1_vs_exp4b_{m}")["p"])
+                  and abs(r.pw("exp4b", m)["pct_A"]["p"] - 0.5) < abs(B[m]["pct_A"]["p"] - 0.5)]
+        if any(r.pw("exp4b", m) for m in r.models):
+            parts.append("the debias prompt " + (f"makes the {join(NAME[m] for m in worse)} judge more biased" if worse
+                         else f"reduces the bias of the {join(NAME[m] for m in better)} judge" if better
+                         else "has no significant effect"))
+        for m in r.models:
+            f = r.pw("exp4c", m)
+            if f:
+                acc_sig = sig(r.test(f"exp1_vs_exp4c_{m}")["p"])
+                a_sig = sig(r.test(f"pctA_exp1_vs_exp4c_{m}")["p"])
+                toward = abs(f["pct_A"]["p"] - 0.5) < abs(B[m]["pct_A"]["p"] - 0.5)
+                if acc_sig:
+                    eff = f"changes accuracy to {pc(f['accuracy'], 0)}"
+                elif a_sig:
+                    eff = ("spreads the verdicts" if toward else "concentrates the verdicts further") + \
+                          " without improving accuracy"
+                else:
+                    eff = "has no significant effect"
+                parts.append(f"majority voting ({NAME[m]}) {eff}")
+        fixed = any(sig(r.test(f"exp1_vs_{x}_{m}")["p"]) and r.pw(x, m)["accuracy"]["p"] > B[m]["accuracy"]["p"]
+                    for x in ("exp4b", "exp4c") for m in r.models if r.test(f"exp1_vs_{x}_{m}"))
+        H.append(("None of the fixes makes the judge reliable: " if not fixed else "The fixes have mixed effects: ")
+                 + join(parts) + ".")
+    for m, v in r.M["verbosity"].items():
+        pat = verbosity_pattern(r, m, v)
+        if pat.startswith("default_"):
+            L = pat[-1]
+            other = "B" if L == "A" else "A"
+            H.append(f"Padding the wrong answer with comments only strengthens the {NAME[m]} judge's default to {L}: "
+                     f"it does not prefer the padded answer when it is shown as {other}.")
+        elif pat.startswith("only_"):
+            H.append(f"The {NAME[m]} judge prefers the padded wrong answer only when it is shown as {pat[-1]}.")
+        elif pat == "both_up":
+            H.append(f"The {NAME[m]} judge prefers the padded wrong answer in both positions.")
+        elif pat == "down":
+            H.append(f"The {NAME[m]} judge picks the padded wrong answer less often, if anything penalising the padding.")
+        else:
+            H.append(f"Padding the wrong answer with comments has no significant effect on the {NAME[m]} judge.")
+    return H
+
+
 # ---------------------------------------------------------------- Results section
 def fig(name, caption, label, wide=False):
     env = "figure*" if wide else "figure"
@@ -257,7 +369,9 @@ def fig(name, caption, label, wide=False):
             f"\\caption{{{caption}}}\n\\label{{fig:{label}}}\n\\end{{{env}}}\n")
 
 
-def section(r: R, F: list[str]) -> str:
+def section(r: R, full: bool = False) -> str:
+    """full=False keeps the section near its 2-page budget: the pointwise and verbosity figures and the
+    difficulty table are left to the slides (their numbers are in the tables and text)."""
     M = r.M
     L = [r"% ---- V. Results (P2) -- generated by src/write_results.py from results/metrics.json ----",
          r"% Regenerate instead of editing numbers by hand. Upload results/tables/*.tex to tables/ and",
@@ -287,14 +401,17 @@ def section(r: R, F: list[str]) -> str:
                 + (lambda L: f" When it does answer {L}, it is right in {b[f'precision_{L}']['k']} of "
                              f"{b[f'precision_{L}']['n']} cases ({pc(b[f'precision_{L}'])}, binomial "
                              f"{pv(b[f'precision_{L}_p'])})." if b[f"precision_{L}"]["n"] else "")(rare_letter(b)))
+        if rare_signal(r):
+            txt.append(READS_CODE.strip())
         L += [tex(" ".join(txt)), ""]
         if len(r.models) == 2:
             L += [tex(finding_scale(r)), ""]
 
     if r.p_models:
-        L += [r"\subsection{Pointwise judging (Exp.~3)}", r"\input{tables/t2_pointwise.tex}",
-              fig("f2_pointwise", "Pointwise judging of all 300 answers. FAR: incorrect code accepted. "
-                  "FRR: correct code rejected.", "pointwise")]
+        L += [r"\subsection{Pointwise judging (Exp.~3)}", r"\input{tables/t2_pointwise.tex}"]
+        if full:
+            L += [fig("f2_pointwise", "Pointwise judging of all 300 answers. FAR: incorrect code accepted. "
+                      "FRR: correct code rejected.", "pointwise")]
         both = join(f"{pc(r.pt(m)['pair_both_right'])} ({NAME[m]})" for m in r.p_models)
         L += [tex(finding_pointwise(r) + f" Both answers of a pair are judged right in only {both} of pairs."), ""]
 
@@ -305,14 +422,15 @@ def section(r: R, F: list[str]) -> str:
               tex(finding_fixes(r)), ""]
 
     if M["verbosity"]:
-        L += [r"\subsection{Verbosity (Exp.~2)}", r"\input{tables/t4_verbosity.tex}",
-              fig("f4_verbosity", "How often the incorrect answer is chosen before and after it is padded with comments "
-                  "claiming correctness. The code logic is unchanged (checked by AST equality).", "verbosity"),
-              tex(finding_verbosity(r)), ""]
+        L += [r"\subsection{Verbosity (Exp.~2)}", r"\input{tables/t4_verbosity.tex}"]
+        if full:
+            L += [fig("f4_verbosity", "How often the incorrect answer is chosen before and after it is padded with "
+                      "comments claiming correctness. The code logic is unchanged (checked by AST equality).", "verbosity")]
+        L += [tex(finding_verbosity(r)), ""]
 
     D = M.get("difficulty", {})
     if any(f"exp1_{m}" in D for m in r.models):
-        L += [r"\subsection{By difficulty}", r"\input{tables/t5_difficulty.tex}"]
+        L += [r"\subsection{By difficulty}"] + ([r"\input{tables/t5_difficulty.tex}"] if full else [])
         txt = []
         for m in r.models:
             d = D.get(f"exp1_{m}", {})
@@ -322,7 +440,7 @@ def section(r: R, F: list[str]) -> str:
         L += [tex(" ".join(txt)), ""]
 
     L += [r"\subsection{Summary of findings}", r"\begin{enumerate}"]
-    L += [r"\item " + tex(f) for f in F]
+    L += [r"\item " + tex(h) for h in headlines(r)]
     L += [r"\end{enumerate}", ""]
     return "\n".join(L)
 
@@ -332,6 +450,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default=str(ROOT / "results"), help="folder with metrics.json and data_stats.json")
     ap.add_argument("--report", default=str(ROOT / "report" / "results_auto.tex"))
+    ap.add_argument("--full", action="store_true",
+                    help="include every figure and the difficulty table (longer than the 2-page budget)")
     ap.add_argument("--allow-mixed-data", action="store_true",
                     help="write findings even though metrics.py's data check failed (never for the report)")
     args = ap.parse_args()
@@ -350,9 +470,10 @@ def main():
     F = findings(r)
     md = ["# Main findings (generated by src/write_results.py from results/metrics.json)", "",
           "Effects are called significant only when p < 0.05. Re-run the script after any new results come in.", ""]
-    md += [f"{i}. {f}" for i, f in enumerate(F, 1)]
+    md += ["## In one line each", ""] + [f"{i}. {h}" for i, h in enumerate(headlines(r), 1)]
+    md += ["", "## With the numbers", ""] + [f"{i}. {f}" for i, f in enumerate(F, 1)]
     (res / "findings.md").write_text("\n".join(md) + "\n")
-    Path(args.report).write_text(section(r, F))
+    Path(args.report).write_text(section(r, full=args.full))
     print("\n".join(md))
     print(f"\nwrote {res / 'findings.md'} and {args.report}")
 

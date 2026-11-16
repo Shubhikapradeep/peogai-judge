@@ -2,6 +2,16 @@
 
 Effects are called significant only when p < 0.05. Re-run the script after any new results come in.
 
+## In one line each
+
+1. In pairwise judging the judges answer A in 96% (3B) and 92% (7B) of calls, and their accuracy (53% for 3B and 54% for 7B) is not significantly better than chance. Their rare answers against that default are usually right.
+2. In pointwise judging they call 79% (3B) and 78% (7B) of answers correct and accept 76% (3B) and 72% (7B) of buggy solutions.
+3. The 7B judge is less position-biased than the 3B judge, but no more accurate.
+4. None of the fixes makes the judge reliable: order averaging decides only 8% (3B) and 15% (7B) of pairs, the debias prompt makes the 3B judge more biased and majority voting (3B) spreads the verdicts without improving accuracy.
+5. Padding the wrong answer with comments only strengthens the 3B judge's default to A: it does not prefer the padded answer when it is shown as B.
+
+## With the numbers
+
 1. Both judges show strong position bias, answering A in 96.0% (3B) and 91.7% (7B) of calls against 50% for an unbiased judge. 3B accuracy is 98.7% with the correct answer as A and 6.7% as B (p < 0.001), and only 8.0% of pairs get the same pick in both orders; 7B accuracy is 96.0% with the correct answer as A and 12.7% as B (p < 0.001), and only 15.3% of pairs get the same pick in both orders. Overall pairwise accuracy (52.7% for 3B, p = 0.387 and 54.3% for 7B, p = 0.149) is not significantly better than chance. The rare verdicts against the default still carry signal: 3B is right in 10 of its 12 B verdicts (83.3%, p = 0.039) and 7B is right in 19 of its 25 B verdicts (76.0%, p = 0.015). The model does read the code, but its default letter drowns that signal out.
 2. Judged one answer at a time, the judges call 79.0% (3B) and 78.3% (7B) of answers correct, although exactly half are wrong (both p < 0.001). They accept 76.0% (3B) and 72.0% (7B) of incorrect solutions and reject 18.0% (3B) and 15.3% (7B) of correct ones. Accuracy is 53.0% for 3B, not significantly better than chance (p = 0.326) and 56.3% for 7B, significantly above chance (p = 0.032). With the 3B judge, about 8 in 10 buggy solutions would pass review, so accuracy alone overstates how safe these judges are for code auditing.
 3. The 7B judge is less position-biased than the 3B judge (A verdicts 91.7% vs 96.0%, p = 0.011; same pick in both orders 15.3% vs 8.0%, p = 0.035), but no more accurate (54.3% vs 52.7%, p = 0.405). In pointwise judging its FAR is 72.0% vs 76.0%, and the accuracy difference is not significant (p = 0.282). The larger model does not make either format a reliable judge.

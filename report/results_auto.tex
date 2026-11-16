@@ -16,19 +16,12 @@ Each experiment covers 150 pairs (300 calls per judge). Brackets give 95\% Wilso
 \label{fig:position}
 \end{figure}
 
-The 3B judge is 52.7\% accurate overall [47.0-58.2]: 98.7\% when the correct answer is A and 6.7\% when it is B (+92.0 points, McNemar $p<$ 0.001). It answers A in 96.0\% of parsed verdicts, against 50\% for an unbiased judge (binomial $p<$ 0.001). It picks the same answer in both orders for 8.0\% of pairs. Of the inconsistent pairs, 138 got A twice and 0 got B twice, so in those the verdict followed the position, not the code. Its overall accuracy is not significantly better than chance ($p=$ 0.387). When it does answer B, it is right in 10 of 12 cases (83.3\%, binomial $p=$ 0.039). The 7B judge is 54.3\% accurate overall [48.7-59.9]: 96.0\% when the correct answer is A and 12.7\% when it is B (+83.3 points, McNemar $p<$ 0.001). It answers A in 91.7\% of parsed verdicts, against 50\% for an unbiased judge (binomial $p<$ 0.001). It picks the same answer in both orders for 15.3\% of pairs. Of the inconsistent pairs, 126 got A twice and 1 got B twice, so in those the verdict followed the position, not the code. Its overall accuracy is not significantly better than chance ($p=$ 0.149). When it does answer B, it is right in 19 of 25 cases (76.0\%, binomial $p=$ 0.015).
+The 3B judge is 52.7\% accurate overall [47.0-58.2]: 98.7\% when the correct answer is A and 6.7\% when it is B (+92.0 points, McNemar $p<$ 0.001). It answers A in 96.0\% of parsed verdicts, against 50\% for an unbiased judge (binomial $p<$ 0.001). It picks the same answer in both orders for 8.0\% of pairs. Of the inconsistent pairs, 138 got A twice and 0 got B twice, so in those the verdict followed the position, not the code. Its overall accuracy is not significantly better than chance ($p=$ 0.387). When it does answer B, it is right in 10 of 12 cases (83.3\%, binomial $p=$ 0.039). The 7B judge is 54.3\% accurate overall [48.7-59.9]: 96.0\% when the correct answer is A and 12.7\% when it is B (+83.3 points, McNemar $p<$ 0.001). It answers A in 91.7\% of parsed verdicts, against 50\% for an unbiased judge (binomial $p<$ 0.001). It picks the same answer in both orders for 15.3\% of pairs. Of the inconsistent pairs, 126 got A twice and 1 got B twice, so in those the verdict followed the position, not the code. Its overall accuracy is not significantly better than chance ($p=$ 0.149). When it does answer B, it is right in 19 of 25 cases (76.0\%, binomial $p=$ 0.015). The model does read the code, but its default letter drowns that signal out.
 
 The 7B judge is less position-biased than the 3B judge (A verdicts 91.7\% vs 96.0\%, $p=$ 0.011; same pick in both orders 15.3\% vs 8.0\%, $p=$ 0.035), but no more accurate (54.3\% vs 52.7\%, $p=$ 0.405). In pointwise judging its FAR is 72.0\% vs 76.0\%, and the accuracy difference is not significant ($p=$ 0.282). The larger model does not make either format a reliable judge.
 
 \subsection{Pointwise judging (Exp.~3)}
 \input{tables/t2_pointwise.tex}
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/f2_pointwise.pdf}
-\caption{Pointwise judging of all 300 answers. FAR: incorrect code accepted. FRR: correct code rejected.}
-\label{fig:pointwise}
-\end{figure}
-
 Judged one answer at a time, the judges call 79.0\% (3B) and 78.3\% (7B) of answers correct, although exactly half are wrong (both $p<$ 0.001). They accept 76.0\% (3B) and 72.0\% (7B) of incorrect solutions and reject 18.0\% (3B) and 15.3\% (7B) of correct ones. Accuracy is 53.0\% for 3B, not significantly better than chance ($p=$ 0.326) and 56.3\% for 7B, significantly above chance ($p=$ 0.032). With the 3B judge, about 8 in 10 buggy solutions would pass review, so accuracy alone overstates how safe these judges are for code auditing. Both answers of a pair are judged right in only 12.7\% (3B) and 18.0\% (7B) of pairs.
 
 \subsection{Effect of the fixes (Exp.~4)}
@@ -44,24 +37,16 @@ Order averaging gives a verdict only when both orders agree, which happens for 8
 
 \subsection{Verbosity (Exp.~2)}
 \input{tables/t4_verbosity.tex}
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/f4_verbosity.pdf}
-\caption{How often the incorrect answer is chosen before and after it is padded with comments claiming correctness. The code logic is unchanged (checked by AST equality).}
-\label{fig:verbosity}
-\end{figure}
-
 Padding the wrong answer with comments changes how often the 3B judge picks it from 47.3\% to 49.7\% ($p=$ 0.065, not significant). When the padded answer is shown as A it wins 93.3\% $\rightarrow$ 99.3\% ($p=$ 0.004); when it is shown as B, 1.3\% $\rightarrow$ 0.0\% ($p=$ 0.500). The rise comes only from position A, so padding strengthens the judge's default to A (96.0\% $\rightarrow$ 99.7\% A verdicts) rather than making it prefer the padded answer. Because the padding also makes the wrong answer the longer one in 127 of 150 pairs, this tests comments and length together.
 
 \subsection{By difficulty}
-\input{tables/t5_difficulty.tex}
 3B pairwise accuracy is 53.0\% (easy), 53.0\% (medium) and 52.0\% (hard). 7B pairwise accuracy is 57.0\% (easy), 55.0\% (medium) and 51.0\% (hard). Each level has only 50 pairs and the benchmark's difficulty labels disagree across generator splits for 82\% of the problems that appear in more than one split, so this breakdown is indicative only.
 
 \subsection{Summary of findings}
 \begin{enumerate}
-\item Both judges show strong position bias, answering A in 96.0\% (3B) and 91.7\% (7B) of calls against 50\% for an unbiased judge. 3B accuracy is 98.7\% with the correct answer as A and 6.7\% as B ($p<$ 0.001), and only 8.0\% of pairs get the same pick in both orders; 7B accuracy is 96.0\% with the correct answer as A and 12.7\% as B ($p<$ 0.001), and only 15.3\% of pairs get the same pick in both orders. Overall pairwise accuracy (52.7\% for 3B, $p=$ 0.387 and 54.3\% for 7B, $p=$ 0.149) is not significantly better than chance. The rare verdicts against the default still carry signal: 3B is right in 10 of its 12 B verdicts (83.3\%, $p=$ 0.039) and 7B is right in 19 of its 25 B verdicts (76.0\%, $p=$ 0.015). The model does read the code, but its default letter drowns that signal out.
-\item Judged one answer at a time, the judges call 79.0\% (3B) and 78.3\% (7B) of answers correct, although exactly half are wrong (both $p<$ 0.001). They accept 76.0\% (3B) and 72.0\% (7B) of incorrect solutions and reject 18.0\% (3B) and 15.3\% (7B) of correct ones. Accuracy is 53.0\% for 3B, not significantly better than chance ($p=$ 0.326) and 56.3\% for 7B, significantly above chance ($p=$ 0.032). With the 3B judge, about 8 in 10 buggy solutions would pass review, so accuracy alone overstates how safe these judges are for code auditing.
-\item The 7B judge is less position-biased than the 3B judge (A verdicts 91.7\% vs 96.0\%, $p=$ 0.011; same pick in both orders 15.3\% vs 8.0\%, $p=$ 0.035), but no more accurate (54.3\% vs 52.7\%, $p=$ 0.405). In pointwise judging its FAR is 72.0\% vs 76.0\%, and the accuracy difference is not significant ($p=$ 0.282). The larger model does not make either format a reliable judge.
-\item Order averaging gives a verdict only when both orders agree, which happens for 8.0\% of pairs (3B) and 15.3\% of pairs (7B). On those pairs accuracy is 83.3\% (10 of 12, 95\% CI 55-95\%, 3B) and 78.3\% (18 of 23, 95\% CI 58-90\%, 7B), but the method abstains on almost every pair. The debias prompt makes the bias worse for 3B, not better. For 3B: A verdicts 96.0\% $\rightarrow$ 98.3\%, $p=$ 0.016; same pick in both orders 8.0\% $\rightarrow$ 3.3\%, $p=$ 0.016. For 7B the change goes the same way but is not significant: A verdicts 91.7\% $\rightarrow$ 93.7\%, $p=$ 0.070; same pick in both orders 15.3\% $\rightarrow$ 11.3\%, $p=$ 0.070. Accuracy does not change significantly (3B 52.7\% $\rightarrow$ 51.7\%, $p=$ 0.453 and 7B 54.3\% $\rightarrow$ 53.0\%, $p=$ 0.289). Majority voting over 3 samples at temperature 0.7 (3B) lowers A verdicts from 96.0\% to 65.7\% ($p<$ 0.001) but leaves accuracy at 50.3\% ($p=$ 0.555 vs greedy) and consistency at 8.7\%: sampling spreads the verdicts out without adding information.
-\item Padding the wrong answer with comments changes how often the 3B judge picks it from 47.3\% to 49.7\% ($p=$ 0.065, not significant). When the padded answer is shown as A it wins 93.3\% $\rightarrow$ 99.3\% ($p=$ 0.004); when it is shown as B, 1.3\% $\rightarrow$ 0.0\% ($p=$ 0.500). The rise comes only from position A, so padding strengthens the judge's default to A (96.0\% $\rightarrow$ 99.7\% A verdicts) rather than making it prefer the padded answer. Because the padding also makes the wrong answer the longer one in 127 of 150 pairs, this tests comments and length together.
+\item In pairwise judging the judges answer A in 96\% (3B) and 92\% (7B) of calls, and their accuracy (53\% for 3B and 54\% for 7B) is not significantly better than chance. Their rare answers against that default are usually right.
+\item In pointwise judging they call 79\% (3B) and 78\% (7B) of answers correct and accept 76\% (3B) and 72\% (7B) of buggy solutions.
+\item The 7B judge is less position-biased than the 3B judge, but no more accurate.
+\item None of the fixes makes the judge reliable: order averaging decides only 8\% (3B) and 15\% (7B) of pairs, the debias prompt makes the 3B judge more biased and majority voting (3B) spreads the verdicts without improving accuracy.
+\item Padding the wrong answer with comments only strengthens the 3B judge's default to A: it does not prefer the padded answer when it is shown as B.
 \end{enumerate}
