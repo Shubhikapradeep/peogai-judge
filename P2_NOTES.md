@@ -16,7 +16,7 @@ The first batch of results mixed two samples: `exp1_3b` and `exp1_7b` ran on the
 | 6. `src/metrics.py` | Done, tested on synthetic results |
 | 7. Tables and charts | **Done** on the final results: `results/tables/`, `results/figures/` |
 | 8. 3–5 main findings | **Done**: `results/findings.md` (every claim backed by a test, p < 0.05) |
-| 9. Results section | **Done**: `report/results_auto.tex`, for P4 to paste into Overleaf. `report/results.tex` is the old hand-fill template, now superseded |
+| 9. Results section | **Done**: `report/results_auto.tex` (about 2 pages: 4 tables, the position-bias and fixes figures, one-line summary). `python -m src.write_results --full` adds the other figures and the difficulty table. `report/results.tex` is the old hand-fill template, now superseded |
 | Methodology text (for P4) | `report/methodology_p2.tex`: Dataset, Judge prompts and Metrics subsections, ready to paste |
 
 ## Run it

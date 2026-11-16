@@ -1688,7 +1688,7 @@
  },
  "data_check": {
   "ok": true,
-  "data": "/tmp/claude-1000/-home-vanshsharma-projects-prompt-project/905f4b4e-1218-4d30-9b42-0b4b92bc54aa/scratchpad/peogai-judge/data/pairs_150.jsonl",
+  "data": "data/pairs_150.jsonl",
   "files": {
    "exp1_3b": {
     "rows": 300,
