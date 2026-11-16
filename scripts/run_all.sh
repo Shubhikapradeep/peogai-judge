@@ -58,6 +58,7 @@ run --exp exp2  --model 3b --data data/pairs_150_verbose.jsonl
 pip install -q matplotlib
 python -m src.metrics --raw "$RAW" --out "$OUT/results"
 python -m src.plots --metrics "$OUT/results/metrics.json" --out "$OUT/results/figures"
+python -m src.write_results --results "$OUT/results" --report "$OUT/results/results_auto.tex"
 python -m src.setup_summary --raw "$RAW" | tee "$OUT/results/setup_summary.md"
 echo "===== run_all finished $(date) ====="
-echo "Everything is in $OUT/results (Drive). Key numbers: $OUT/results/key_numbers.md"
+echo "Everything is in $OUT/results (Drive). Key numbers: $OUT/results/key_numbers.md; findings: $OUT/results/findings.md"

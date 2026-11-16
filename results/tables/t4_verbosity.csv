@@ -1,2 +1,2 @@
-Model,Wrong wins (plain),Wrong wins (padded),Δ pp,Correct=A,Correct=B,p
+Model,Wrong wins (plain),Wrong wins (padded),Δ pp,Wrong shown as B,Wrong shown as A,p
 Qwen2.5-Coder-3B,47.3,49.7,+2.3,1.3 -> 0.0,93.3 -> 99.3,0.065

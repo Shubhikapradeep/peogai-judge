@@ -1,0 +1,90 @@
+% ---- III. Methodology: dataset, prompts and metrics (P2 text for P4) ----
+% P4 owns Section III. These three subsections can be pasted in as they are; models, the experiment list and the
+% design diagram are P4's. Every number here comes from `python -m src.data_stats` (results/data_stats.json).
+\providecommand{\tbd}[1]{\textcolor{red}{[#1]}}
+
+\subsection{Dataset}
+\label{sec:data}
+
+We use the code generation task of CodeJudgeBench~\tbd{cite}. It contains 2{,}103 answer pairs for
+676 competitive-programming problems from LeetCode, AtCoder and Codeforces. Each pair holds two answers to the
+same problem, written by the same model. One passes every hidden unit test and the other fails at least one.
+The test outcome is our ground truth, so no human labelling is needed. The answers were written by seven
+models: Claude 3.7 Sonnet, Claude 4 Sonnet, Claude 4 Opus, Gemini 2.5 Pro, Gemini 2.5 Flash,
+Gemini 2.5 Flash-Lite and Qwen3-235B.
+
+We sample 150 pairs (300 answers) with a fixed seed (42), keeping one pair per problem so that no problem is
+counted twice. The sample is stratified by the benchmark's difficulty label: 50 easy, 50 medium and 50
+hard. It contains 78 LeetCode, 71 AtCoder and one Codeforces problem. We give the judge only the final code
+block of each answer, without the writer's reasoning. Otherwise the judge could follow the explanation
+rather than read the code.
+
+Table~\ref{tab:t0_data} summarises the sample. Correct and incorrect answers have almost the same length
+(mean 64.8 vs.\ 65.3 lines, median 59 vs.\ 59.5), and the correct one is the longer of the two in 65 of 150
+pairs. Answer length therefore gives the judge little signal on its own. We note one limitation of the
+benchmark. The same problem often carries different difficulty labels in different generator splits: of the
+508 problems that appear in more than one split, 416 (82\%) have conflicting labels. Results by difficulty
+should therefore be read as indicative only.
+
+\input{tables/t0_data.tex}
+
+\textbf{Verbosity variant (Exp.~2).} For each pair we create a padded copy of the incorrect answer. We add a
+header comment saying the solution handles every edge case and has been verified, plus short comments above
+functions, loops, conditionals and return statements (16.9 lines added on average). Only comments are
+added. We check this by confirming that the padded and original code parse to the same abstract syntax tree.
+For six answers this check failed, so they received the header comment only. The padding also
+makes the incorrect answer longer than the correct one in 127 of 150 pairs. Exp.~2 therefore measures the
+combined effect of persuasive comments and extra length, not comments alone.
+
+\subsection{Judge prompts}
+\label{sec:prompts}
+
+All prompts are zero-shot and ask for a one-token verdict, so they can be parsed without ambiguity. They share
+the system message ``You are a strict code reviewer. Follow the output format exactly.''
+
+\begin{itemize}
+\item \textbf{Pairwise} (\texttt{pairwise\_v1}): gives the problem and two answers labelled A and B, states
+that exactly one passes all hidden unit tests, and asks for the single letter \texttt{A} or \texttt{B}.
+\item \textbf{Pairwise, debiased} (\texttt{pairwise\_debias}): the same prompt plus an instruction that the
+order of the answers is random and carries no information. The judge is told not to prefer an answer for
+its position, length, comments or polish, and to judge only whether the logic is correct for all inputs.
+\item \textbf{Pointwise} (\texttt{pointwise\_v1}): gives the problem and one answer and asks for
+\texttt{correct} or \texttt{incorrect}. The judge is not told how often answers are correct.
+\end{itemize}
+
+Each pairwise item is judged twice: once with the correct answer as A and once as B. Across the 300 calls,
+the correct answer is therefore A exactly half the time, so an unbiased judge would output \texttt{A} in
+50\% of its verdicts.
+
+\subsection{Metrics}
+\label{sec:metrics}
+
+A rule-based parser maps each output to a verdict. If no verdict can be found, the output counts as a
+\emph{parse failure}. Parse failures are scored as wrong in every accuracy figure and are also reported
+separately.
+
+\textbf{Pairwise.} \emph{Accuracy} is the share of the 300 calls that pick the correct answer. We also
+report it separately for each order (correct answer shown as A, and as B). The difference between those two
+accuracies is the clearest single measure of position bias. For each pair we record which answer the judge
+picks in each order. A pair is \emph{consistent} if both orders pick the same answer, whether both right or
+both wrong. Our position-bias measures are the \emph{consistency rate} and the \emph{share of \texttt{A}
+verdicts}. Inconsistent pairs where the judge outputs the same letter twice (AA or BB) are verdicts that
+follow the position, not the code.
+
+\textbf{Order averaging (Exp.~4a).} This fix needs no extra calls. A pair receives a verdict only when both
+orders agree, and is otherwise left undecided. We report its \emph{accuracy on decided pairs} together with
+its \emph{coverage}, the share of pairs that are decided. Accuracy alone would overstate the gain, because
+the hard cases are exactly the ones left undecided.
+
+\textbf{Pointwise.} We report accuracy over all 300 answers, the \emph{false acceptance rate} (FAR, the
+share of incorrect answers judged correct) and the \emph{false rejection rate} (FRR, the share of correct
+answers judged incorrect). For code auditing, FAR is the key metric: an accepted bug reaches production,
+while a rejected correct answer only costs a second look.
+
+\textbf{Verbosity (Exp.~2).} We report the share of calls in which the incorrect answer wins, before and
+after padding, on the same pairs and orders.
+
+\textbf{Uncertainty.} With 150 pairs, one pair changes a rate by 0.67 points. We therefore give 95\%
+Wilson confidence intervals for every rate. When two conditions are run on the same calls (a fix against the
+baseline, or padded against plain), we compare them with an exact McNemar test on per-call correctness,
+which uses only the calls where the two conditions disagree.

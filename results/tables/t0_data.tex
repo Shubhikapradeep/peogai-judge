@@ -1,0 +1,22 @@
+\begin{table}[t]
+\centering
+\caption{Evaluation data}
+\label{tab:t0_data}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{p{0.27\columnwidth}p{0.66\columnwidth}}
+\hline
+ & Value \\
+\hline
+Source & CodeJudgeBench, code generation (2,103 pairs, 676 problems) \\
+Sample & 150 pairs = 300 answers, one pair per problem, seed 42 \\
+Ground truth & Hidden unit tests: one answer passes all, the other fails at least one \\
+Difficulty & 50 easy / 50 medium / 50 hard \\
+Platform & 78 LeetCode / 71 AtCoder / 1 Codeforces \\
+Answer length (lines) & correct 64.8 mean, 59 median; incorrect 65.3 mean, 59.5 median \\
+Longer answer & correct in 65 pairs, incorrect in 79 \\
+Answers written by & Gemini 2.5 Flash 36, Claude 3.7 Sonnet 30, Gemini 2.5 Flash-Lite 28, Claude 4 Sonnet 18, Claude 4 Opus 14, Qwen3-235B 14, Gemini 2.5 Pro 10 \\
+Exp 2 padding & +16.9 comment lines on average; padded wrong answer is longer than the correct one in 127 pairs \\
+\hline
+\end{tabular}
+\end{table}
