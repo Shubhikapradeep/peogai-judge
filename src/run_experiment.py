@@ -69,6 +69,7 @@ def load_pairs(path):
                 problem=_get(r, "problem"), correct=_get(r, "correct"),
                 incorrect=_get(r, "incorrect"),
                 incorrect_verbose=r.get("incorrect_verbose"),
+                question_id=r.get("question_id"),
                 difficulty=_get(r, "difficulty", required=False)))
     return pairs
 
@@ -83,7 +84,8 @@ def build_jobs(pairs, cfg):
             if not p["incorrect_verbose"]:
                 raise ValueError(f"{p['pair_id']}: exp2 needs `incorrect_verbose` (run src/perturb.py)")
             bad = p["incorrect_verbose"]
-        base = dict(pair_id=p["pair_id"], difficulty=p["difficulty"])
+        # question_id lets metrics.py prove every row was judged on the current data file
+        base = dict(pair_id=p["pair_id"], question_id=p["question_id"], difficulty=p["difficulty"])
         if cfg["kind"] == "pairwise":
             jobs.append(dict(base, job_id=f"{p['pair_id']}_cf", order="cf", gold="A",
                              item=dict(problem=p["problem"], code_a=p["correct"], code_b=bad)))

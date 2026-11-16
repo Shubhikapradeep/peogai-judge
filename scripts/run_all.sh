@@ -40,7 +40,7 @@ for f in sorted(glob.glob(sys.argv[1] + "/*_smoke.jsonl")):
     bad = sum(not r["parse_ok"] for r in rows)
     print(f, f"parse failures {bad}/{len(rows)}", [r["raw"][:30] for r in rows[:4]])
     if bad > len(rows) * 0.3:
-        sys.exit("!!! too many parse failures in smoke test; send this log to Claude")
+        sys.exit("!!! too many parse failures in smoke test; send this log to the team")
 EOF
 
 # ---- full runs, most important first (a session cut-off loses the least)
@@ -58,6 +58,7 @@ run --exp exp2  --model 3b --data data/pairs_150_verbose.jsonl
 pip install -q matplotlib
 python -m src.metrics --raw "$RAW" --out "$OUT/results"
 python -m src.plots --metrics "$OUT/results/metrics.json" --out "$OUT/results/figures"
+python -m src.write_results --results "$OUT/results" --report "$OUT/results/results_auto.tex"
 python -m src.setup_summary --raw "$RAW" | tee "$OUT/results/setup_summary.md"
 echo "===== run_all finished $(date) ====="
-echo "Everything is in $OUT/results (Drive). Key numbers: $OUT/results/key_numbers.md"
+echo "Everything is in $OUT/results (Drive). Key numbers: $OUT/results/key_numbers.md; findings: $OUT/results/findings.md"
