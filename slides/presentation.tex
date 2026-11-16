@@ -61,7 +61,7 @@
       Model Scale & Giant closed APIs (GPT-4, 70B+) & \textbf{Small open-weight (3B \& 7B)} on local M3 Pro \\
       Ground Truth & Subjective human preferences & \textbf{Deterministic compiler \& test passes} \\
       Domain & Dialogue / general NLP & \textbf{Algorithmic code correctness} \\
-      Mitigations & Assumed prompt fixes work & \textbf{Proved prompt fixes fail; verified order-averaging} \\
+      Mitigations & Assumed prompt fixes work & \textbf{Empirically showed prompt fixes fail; order-averaging filter} \\
       \bottomrule
     \end{tabular}
   \end{table}
@@ -113,7 +113,7 @@
     $\swarrow$ \hspace{2cm} $\searrow$ \\
     \textbf{Batch Runner} (Colab T4 GPU) \hspace{1cm} \textbf{Live Demo App} (M3 Pro Ollama) \\
     $\downarrow$ \hspace{4cm} $\downarrow$ \\
-    \textbf{Metrics Engine} (\texttt{results/}) \hspace{1cm} \textbf{Order-Averaged Bias Filter}
+    \textbf{Metrics Engine} (\texttt{src/metrics.py}) \hspace{1cm} \textbf{Order-Averaged Bias Filter}
   \end{center}
 \end{frame}
 
@@ -178,7 +178,7 @@
     \footnotesize
     \begin{tabular}{llrrrr}
       \toprule
-      Model & Method & Accuracy & Consistency & \% A & McNemar $p$ \\
+      Model & Method & Accuracy & Consistency & \% A & $p$ (accuracy) \\
       \midrule
       3B & Baseline (Exp 1) & 52.7\% & 8.0\% & 96.0\% & --- \\
          & \textbf{Order Averaging (4a)} & \textbf{83.3\%} & \textbf{100.0\%} & --- & --- \\
@@ -191,7 +191,7 @@
       \bottomrule
     \end{tabular}
   \end{table}
-  \textbf{Conclusion:} Prompt debiasing and sampling fail. Only order-averaging provides provable safety.
+  \textbf{Conclusion:} Prompt debiasing and sampling fail to fix evaluation bias. Order-averaging acts as an inconsistency filter, raising accuracy on decided pairs to 83.3\% at 8.0\% coverage.
 \end{frame}
 
 % Slide 13
@@ -203,16 +203,17 @@
         \item \textbf{Position Bias:} 3B voted A in 96\% of calls; rare B votes carry true signal (83.3\% right, $p=0.039$).
         \item \textbf{Pointwise Leniency:} 3B accepts 76\% of buggy code (FAR), approving ~79\% of answers.
         \item \textbf{Scale (3B vs 7B):} 7B is less biased ($p=0.011$) but no more accurate ($p=0.405$).
-        \item \textbf{Fixes Fail:} Debias prompt worsened 3B bias ($p=0.016$); only order-averaging ensures safety.
-        \item \textbf{Verbosity (Exp 2):} Comments only amplify the default to position A ($p=0.004$).
+        \item \textbf{Fixes Fail:} Debias prompt worsened 3B bias ($p=0.016$); order-averaging acts as an inconsistency filter.
+        \item \textbf{Verbosity (Exp 2):} Comments only amplify position A ($p=0.004$; overall shift $p=0.065$ not significant).
       \end{enumerate}
     \end{column}
     \begin{column}{0.5\textwidth}
       \textbf{Limitations:}
       \begin{itemize}
+        \item Exp 2 length confound: padding made wrong answer longer in 127/150 pairs.
+        \item Statistical power: $\pm 8$ pp CIs on pair rates ($N=150$); single prompt template.
         \item Difficulty label noise: 82\% conflict across splits in CodeJudgeBench.
         \item Model scale limited to $\le 7$B parameters.
-        \item Single-language (Python) focus.
       \end{itemize}
     \end{column}
   \end{columns}
@@ -223,11 +224,12 @@
   \begin{itemize}
     \item \textbf{Interactive Web App (\texttt{app/app.py} \& \texttt{app/web_demo.py}):} Runs live on Apple M3 Pro via Ollama.
     \item \textbf{Real-Time Dual-Order Evaluation:} Flags position bias flips on the fly and applies order-averaged filter.
-    \item \textbf{3 Ready-Made Benchmark Cases:}
+    \item \textbf{4 Ready-Made Benchmark Cases:}
       \begin{itemize}
         \item Example 1 (p015): Severe Position Bias Flip (AA flip on DP).
         \item Example 2 (p062): Consistent Agreement ($O(N)$ greedy vs $O(N^2)$ DP).
-        \item Example 3 (p014): Algorithmic Complexity Comparison under Distance Constraints.
+        \item Example 3 (p024): Consistent Agreement (Server Request Window Counter).
+        \item Example 4 (p028): Severe Position Bias Flip (Maximum Strong Pair XOR).
       \end{itemize}
     \item \textbf{Complete Open Repository:} Code, prompts, 2,400 raw execution logs, and IEEE report draft.
   \end{itemize}

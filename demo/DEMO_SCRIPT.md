@@ -65,7 +65,7 @@
   > "This isn't just an isolated anomaly. We ran 2,400 rigorous evaluations across Google Colab T4 GPUs and our local setup. Here are the three critical findings:  
   > 1. **Massive Position Bias Gap (Fig 1):** Qwen2.5-Coder-3B chose position A in **96%** of all calls. When the correct code was A, accuracy was **98.7%**. When it was B, accuracy plummeted to **6.7%**—a shocking **92 percentage point gap**! Scaling to 7B only narrowed this gap slightly to 83 percentage points.  
   > 2. **Alarming False Acceptance Rate (Fig 2):** In pointwise auditing—checking one code snippet at a time—the judge exhibited a **76% False Acceptance Rate**. It accepted roughly 8 out of 10 buggy submissions due to strong leniency bias.  
-  > 3. **Prompt Fixes Do Not Work (Fig 3):** Explicitly warning the judge to ignore order and length with a debiasing prompt changed nothing (p=0.453). Sampling 3 votes at temperature 0.7 also failed (p=0.555). Only **dual-order averaging** reliably eliminates position bias, raising accuracy to **83.3%** on decided pairs."
+  > 3. **Prompt Fixes Do Not Work (Fig 3):** Explicitly warning the judge to ignore order and length with a debiasing prompt actually increased A answers to 98.3% (p=0.016) without improving accuracy (p=0.453). Sampling 3 votes at temperature 0.7 lowered A answers to 66% but did not improve accuracy (p=0.555) or consistency (p=1.000). Only **dual-order averaging** reliably filters out position-biased flips, raising accuracy to **83.3%** on decided pairs (at 8% coverage)."
 
 ---
 

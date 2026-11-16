@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.judge import load_backend, judge_both_orders, MockBackend, OllamaBackend, DEFAULT_PROMPTS
+from src.judge import load_backend, judge_both_orders
 
 # Paths to data and results
 DATA_DIR = ROOT / "data"
@@ -34,7 +34,7 @@ DEMO_EXAMPLES_PATH = DATA_DIR / "demo_examples.json"
 
 # Load pre-built demo examples
 if DEMO_EXAMPLES_PATH.exists():
-    with open(DEMO_EXAMPLES_PATH, "r") as f:
+    with open(DEMO_EXAMPLES_PATH, "r", encoding="utf-8") as f:
         DEMO_EXAMPLES = json.load(f)
 else:
     DEMO_EXAMPLES = []
@@ -43,56 +43,95 @@ EXAMPLE_TITLES = [f"{ex['title']} ({ex['category']})" for ex in DEMO_EXAMPLES]
 
 
 class BenchmarkReplayBackend:
-    """Fallback / offline backend that replays the empirical Qwen2.5-Coder-3B
-    benchmark behavior on recorded examples, or simulates position bias if offline."""
+    """Offline backend that replays the exact empirical Qwen2.5-Coder-3B
+    benchmark results from results/raw/exp1_3b.jsonl. Refuses custom inputs."""
     name = "benchmark_replay"
-    model_id = "Qwen2.5-Coder-3B (Benchmark Replay / Offline)"
-    quant = "fp16 (empirical)"
+    model_id = "Qwen2.5-Coder-3B (Offline Replay: results/raw/exp1_3b.jsonl)"
+    quant = "fp16 (empirical benchmark)"
 
-    def __init__(self, model_key="3b"):
-        self.model_key = model_key
+    def __init__(self, raw_path: Path | None = None, data_path: Path | None = None):
+        self.raw_path = raw_path or (RESULTS_DIR / "raw" / "exp1_3b.jsonl")
+        self.data_path = data_path or (DATA_DIR / "pairs_150.jsonl")
+        self.bench_pairs = {}
+        self.by_problem = {}
+        self.records = {}
+        self._load()
+
+    def _load(self):
+        if self.data_path.exists():
+            with open(self.data_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        it = json.loads(line)
+                        pid = it["pair_id"]
+                        self.bench_pairs[pid] = it
+                        self.by_problem[self._normalize(it["problem"])] = pid
+        if self.raw_path.exists():
+            with open(self.raw_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        r = json.loads(line)
+                        pid = r.get("pair_id")
+                        order = r.get("order")
+                        if pid and order:
+                            self.records.setdefault(pid, {})[order] = r
+
+    @staticmethod
+    def _normalize(text: str) -> str:
+        return " ".join(text.strip().split())
+
+    def _parse_prompt(self, p: str) -> tuple[str, str, str]:
+        prob = ""
+        code_a = ""
+        code_b = ""
+        if "### Problem\n" in p:
+            parts = p.split("### Problem\n", 1)[1]
+            if "### Answer A\n" in parts:
+                prob, rem = parts.split("### Answer A\n", 1)
+                if "### Answer B\n" in rem:
+                    code_a, rem2 = rem.split("### Answer B\n", 1)
+                    if "\n\nWhich answer is correct?" in rem2:
+                        code_b = rem2.split("\n\nWhich answer is correct?", 1)[0]
+                    else:
+                        code_b = rem2
+        return prob.strip(), code_a.strip(), code_b.strip()
 
     def generate(self, prompts, temperature=0.0, n=1, max_new_tokens=16, seed=42):
         outs = []
         for p in prompts:
-            # Check for consistent pass examples (e.g. trivial add, p062 beautiful binary string or p024 servers)
-            is_consistent_problem = (
-                "add(a" in p.lower() or "return a + b" in p.lower()
-                or "beautiful" in p.lower() or "binary string" in p.lower()
-                or "server" in p.lower() or "server_id" in p.lower()
-            )
-            if is_consistent_problem:
-                # In consistent cases, the model recognizes the correct algorithm (Candidate 1)
-                # Check whether Candidate 1 is placed as Answer A or Answer B
-                cand1_indicators = [
-                    "return a + b",
-                    "for i in range(0, len(s), 2):",
-                    "from collections import defaultdict",
-                    "requests = [0] * n",
-                    "left, right = 0, 0"
-                ]
-                is_cand1_in_a = False
-                a_section = p.split("### Answer A")[1].split("### Answer B")[0] if "### Answer A" in p else ""
-                for ind in cand1_indicators:
-                    if ind in a_section:
-                        is_cand1_in_a = True
-                        break
-                ans = "A" if is_cand1_in_a else "B"
+            prob, code_a, code_b = self._parse_prompt(p)
+            norm_prob = self._normalize(prob)
+            pid = self.by_problem.get(norm_prob)
+
+            if not pid or pid not in self.records:
+                raise ValueError(
+                    "Offline Benchmark Replay is only available for the 150 benchmark pairs. "
+                    "For custom code, please select the live 'Ollama (Local Qwen2.5-Coder-3B Live)' backend."
+                )
+
+            item = self.bench_pairs[pid]
+            norm_correct = self._normalize(item["correct"])
+            norm_incorrect = self._normalize(item["incorrect"])
+            norm_a = self._normalize(code_a)
+            norm_b = self._normalize(code_b)
+
+            if norm_a == norm_correct or norm_b == norm_incorrect:
+                order_key = "cf"
+            elif norm_a == norm_incorrect or norm_b == norm_correct:
+                order_key = "cs"
             else:
-                # Standard severe position bias behavior observed in 92% of benchmark pairs
-                ans = "A"
+                order_key = "cf" if "cf" in self.records[pid] else "cs"
+
+            rec = self.records[pid].get(order_key)
+            ans = rec.get("verdict") if rec else "A"
             outs.append([ans] * n)
         return outs
 
 
 def get_backend_instance(backend_type: str):
-    """Instantiate selected backend with graceful fallback."""
+    """Instantiate selected backend."""
     if backend_type == "ollama":
-        try:
-            return load_backend("ollama", "3b")
-        except Exception:
-            # If Ollama service is not reachable, fallback to benchmark replay
-            return BenchmarkReplayBackend()
+        return load_backend("ollama", "3b")
     elif backend_type == "mock":
         return load_backend("mock", "mock")
     else:
@@ -103,22 +142,55 @@ def run_evaluation(problem: str, candidate_1: str, candidate_2: str,
                    backend_choice: str, prompt_strategy: str):
     """Executes the dual-order code judgment and assesses position bias."""
     if not problem.strip():
-        return ("⚠️ Error: Problem description cannot be empty.", "", "", "", "", "", "")
+        return ("⚠️ Error: Problem description empty", "Please provide a problem description.", "", "", "", "")
     if not candidate_1.strip() or not candidate_2.strip():
-        return ("⚠️ Error: Both Candidate 1 and Candidate 2 code must be provided.", "", "", "", "", "", "")
+        return ("⚠️ Error: Missing code", "Both Candidate 1 and Candidate 2 code must be provided.", "", "", "", "")
 
     t0 = time.time()
-    backend = get_backend_instance(backend_choice)
+    try:
+        backend = get_backend_instance(backend_choice)
+    except Exception as e:
+        return (
+            "❌ Backend Initialization Error",
+            f"⚠️ **FAILED TO INITIALIZE BACKEND `{backend_choice}`**\n\nError: `{e}`",
+            "",
+            "### Order 1\n_Aborted_",
+            "### Order 2\n_Aborted_",
+            f"Backend: `{backend_choice} (Error)`"
+        )
 
     try:
         # Run judge in both permutations
         res = judge_both_orders(backend, problem, candidate_1, candidate_2,
                                 prompt_type=prompt_strategy)
+    except ValueError as ve:
+        return (
+            "⚠️ Custom Input Not Supported in Replay",
+            f"⚠️ **OFFLINE REPLAY RESTRICTED TO BENCHMARK PAIRS**\n\n{ve}\n\nTo evaluate custom code with a live neural network, please switch the backend to **'Ollama (Local Qwen2.5-Coder-3B Live)'**.",
+            "",
+            "### Order 1\n_N/A (Custom code not in benchmark)_",
+            "### Order 2\n_N/A (Custom code not in benchmark)_",
+            "Backend: `benchmark_replay (Custom input rejected)`"
+        )
     except Exception as e:
-        # In case of local connection error, use Benchmark Replay backend
-        backend = BenchmarkReplayBackend()
-        res = judge_both_orders(backend, problem, candidate_1, candidate_2,
-                                prompt_type=prompt_strategy)
+        if backend_choice == "ollama":
+            return (
+                "❌ Ollama Connection Failed",
+                f"⚠️ **OLLAMA IS NOT REACHABLE**\n\nCould not connect to the local Ollama server at http://localhost:11434.\n\n**Error:** `{e}`\n\n**How to fix:**\n1. Ensure Ollama is running (`ollama serve`).\n2. Ensure the model is pulled (`ollama pull qwen2.5-coder:3b`).\n3. Or select **'Benchmark Replay (Offline)'** to inspect pre-recorded results from the 150 benchmark pairs.",
+                "",
+                "### Order 1\n_Aborted (Ollama unreachable)_",
+                "### Order 2\n_Aborted (Ollama unreachable)_",
+                "Backend: `ollama (Offline / Not Running)`"
+            )
+        else:
+            return (
+                "❌ Evaluation Failed",
+                f"⚠️ **ERROR DURING EVALUATION**\n\n`{e}`",
+                "",
+                "### Order 1\n_Error_",
+                "### Order 2\n_Error_",
+                f"Backend: `{backend_choice} (Error)`"
+            )
 
     elapsed = round(time.time() - t0, 3)
 
@@ -260,11 +332,11 @@ def build_app():
                             with gr.Row():
                                 backend_radio = gr.Radio(
                                     choices=[
-                                        ("Benchmark Replay / Offline (Empirical Ground Truth)", "benchmark_replay"),
                                         ("Ollama (Local Qwen2.5-Coder-3B Live)", "ollama"),
+                                        ("Benchmark Replay (Offline - 150 benchmark pairs only)", "benchmark_replay"),
                                         ("Mock Backend (Pure Position Bias)", "mock"),
                                     ],
-                                    value="benchmark_replay",
+                                    value="ollama",
                                     label="Judge Model Backend"
                                 )
                                 prompt_radio = gr.Radio(
@@ -314,11 +386,11 @@ def build_app():
                 gr.Markdown("## Key Findings from 2,400 Model Evaluations")
                 gr.Markdown(
                     """
-                    1. **Severe First-Position Bias:** In pairwise evaluation (Exp 1), Qwen2.5-Coder-3B selected Position A in **96.0%** of calls, and 7B selected Position A in **91.7%**. When the correct code appeared as A, accuracy was **98.7%**; when placed as B, accuracy plummeted to **6.7%** (a **+92.0 pp gap**).
-                    2. **Near-Zero Order Consistency:** Consistency across orders was only **8.0%** for 3B and **15.3%** for 7B. In **138 out of 150 pairs (92.0%)**, the 3B model flipped its pick simply because presentation order swapped!
-                    3. **High False Acceptance in Pointwise Auditing:** In pointwise judging (Exp 3), 3B exhibited a **76.0% False Acceptance Rate (FAR)** (72.0% for 7B). Leniency bias caused the judge to approve ~79% of all submissions. In production auditing, 3 out of 4 buggy programs would slip past.
-                    4. **Order-Averaging is the Only Robust Fix:** Requiring both orders to agree (Exp 4a) boosts accuracy to **83.3%** (3B) and eliminates position bias by construction, at the cost of coverage (**8.0%** decided).
-                    5. **Debiasing Prompts & Majority Voting Fail:** Instructing the model to ignore order (Exp 4b) did not reduce bias (%A remained 98.3%, p=0.453). Sampling 3 completions at T=0.7 (Exp 4c) did not improve consistency (p=0.555), proving the bias is **systematic representation bias, not stochastic noise**.
+                    1. **Severe First-Position Bias:** In pairwise judging, judges answer A in **96.0%** (3B) and **91.7%** (7B) of calls. When the correct code is A, accuracy is **98.7%** (3B); when placed as B, accuracy drops to **6.7%** (+92.0 pp gap). Overall pairwise accuracy (52.7% 3B, 54.3% 7B) is not significantly better than chance. Rare B answers carry real signal (83.3% right for 3B, p=0.039), but the default letter drowns it out.
+                    2. **Low Order Consistency:** In **92.0%** of pairs (138/150) for 3B and **84.7%** (127/150) for 7B, the verdict followed position rather than code. Consistency across orders was only **8.0%** (3B) and **15.3%** (7B).
+                    3. **High False Acceptance in Pointwise Auditing:** In single-code evaluation (Exp 3), judges call ~79% of all answers correct, accepting **76.0%** (3B) and **72.0%** (7B) of buggy solutions (FAR). Leniency bias means ~8 in 10 broken solutions pass review.
+                    4. **Order-Averaging Acts as an Inconsistency Filter:** Requiring both orders to agree achieves **83.3%** accuracy on decided pairs for 3B (10 of 12, 95% CI 55–95%) and **78.3%** for 7B, but abstains on **92.0%** (3B) and **84.7%** (7B) of pairs. It catches inconsistency rather than fixing underlying reliability.
+                    5. **Prompting and Sampling Mitigations Fail:** The debias prompt (Exp 4b) actually increased A answers on 3B (96.0% -> 98.3%, p=0.016) without improving accuracy (51.7%, p=0.453). Majority vote of 3 at T=0.7 (Exp 4c) lowered A answers to 65.7% (p<0.001) but left accuracy at 50.3% (p=0.555 vs greedy) and consistency at 8.7% (p=1.0).
                     """
                 )
 
@@ -380,7 +452,7 @@ def build_app():
                        │                               │
                        ▼                               ▼
                Metrics & Plots Engine           Bias Detector &
-              (results/metrics.py)              Order-Averaged Filter
+              (src/metrics.py)                  Order-Averaged Filter
                        │
                        ▼
                  IEEE Report & Slides

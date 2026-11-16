@@ -18,11 +18,11 @@ We test whether small, open-source language models ($\le 7\text{B}$) running on 
 | **Pairwise Accuracy (Correct = A)** | **98.7%** | **96.0%** | Near-perfect score when correct code is presented first. |
 | **Pairwise Accuracy (Correct = B)** | **6.7%** | **12.7%** | Catastrophic drop when correct code is placed second. |
 | **Position Accuracy Gap** | **+92.0 pp** | **+83.3 pp** | Extreme presentation-order sensitivity. |
-| **Order Consistency** | **8.0%** (138 AA flips) | **15.3%** (126 AA flips) | In **92% of pairs**, the verdict followed position, not code! |
+| **Order Consistency** | **8.0%** (138 AA flips) | **15.3%** (126 AA flips) | In **92.0% of pairs (3B)** and **84.7% (7B)**, the verdict followed position, not code! |
 | **Pointwise False Acceptance (FAR)** | **76.0%** | **72.0%** | ~3 out of 4 buggy programs pass review (leniency bias). |
-| **Fix: Order-Averaging (Exp 4a)** | **83.3% Acc (100% Cons)** | **78.3% Acc (100% Cons)** | **Only robust fix:** filters out inconsistent pairs. |
-| **Fix: Debias Prompt (Exp 4b)** | 51.7% Acc ($p = 0.453$) | 53.0% Acc ($p = 0.289$) | Prompts **fail** to reduce position bias. |
-| **Fix: Majority Vote@3 (Exp 4c)** | 50.3% Acc ($p = 0.555$) | — | Sampling does not overcome systematic token bias. |
+| **Fix: Order-Averaging (Exp 4a)** | **83.3% Acc (100% Cons)** | **78.3% Acc (100% Cons)** | **Inconsistency filter:** raises accuracy on decided pairs, but coverage is only 8.0% (3B) and 15.3% (7B). |
+| **Fix: Debias Prompt (Exp 4b)** | 51.7% Acc ($p_{\text{acc}} = 0.453$) | 53.0% Acc ($p_{\text{acc}} = 0.289$) | Prompts fail: %A actually rose to 98.3% ($p=0.016$), worsening bias. |
+| **Fix: Majority Vote@3 (Exp 4c)** | 50.3% Acc ($p_{\text{acc}} = 0.555$) | — | Voting cuts %A to 65.7% ($p<0.001$), but accuracy ($p=0.555$) and consistency (8.7%, $p=1.000$) do not improve. |
 
 ---
 
@@ -37,7 +37,7 @@ peogai-judge/
 │   ├── pairs_150.jsonl          # 150 stratified code pairs (50 easy / 50 med / 50 hard)
 │   ├── pairs_150_stats.json     # Dataset balance & line count metadata
 │   ├── pairs_150_verbose.jsonl  # Exp 2 verbosity perturbation pairs (AST logic preserved)
-│   └── demo_examples.json       # 3 curated ready-made demo examples for the live demo
+│   └── demo_examples.json       # 4 curated ready-made demo examples for the live demo
 ├── demo/
 │   └── DEMO_SCRIPT.md           # 3-to-4 minute video script, cue cards, & two-device checklist
 ├── notebooks/
@@ -61,6 +61,7 @@ peogai-judge/
 │   ├── key_numbers.md           # Master list of all numerical results with 95% Wilson CIs
 │   └── setup_summary.md         # Hardware, latency, and session cost summary
 ├── scripts/
+│   ├── run_all.sh               # Complete pipeline orchestration script (sample -> run -> eval)
 │   └── setup_ollama.sh          # One-click Ollama verification & model pull for macOS M3 Pro
 ├── slides/
 │   ├── index.html               # Interactive 14-slide HTML5 presentation (open in any browser)
@@ -70,9 +71,11 @@ peogai-judge/
 │   ├── judge.py                 # Core unified judge() function with multiple backends
 │   ├── run_experiment.py        # Resumable batch runner with Google Drive checkpointing
 │   ├── sample_data.py           # Stratified sampling from CodeJudgeBench (seed 42)
+│   ├── data_stats.py            # Code length, difficulty, and generator statistics generator
 │   ├── perturb.py               # AST-validated comment padding for Exp 2
 │   ├── metrics.py               # Statistical metrics, Wilson CIs, and McNemar paired tests
 │   ├── plots.py                 # Plot generation script with consistent model palette
+│   ├── write_results.py         # LaTeX and Markdown tables generator (Tables 0-5)
 │   └── setup_summary.py         # Summary generator for experimental setup
 ├── requirements.txt             # Python dependencies
 └── README.md                    # Master documentation
@@ -132,7 +135,8 @@ Then open **`http://localhost:7860`**.
 4. **Pre-Loaded Benchmark Cases:** 1-click loading of real cases from the benchmark:
    - **Case 1 (p015):** Severe Position Bias Flip (AA Flip on DP Subsequence Sum).
    - **Case 2 (p062):** Consistent Agreement (Greedy $O(N)$ vs DP $O(N^2)$).
-   - **Case 3 (p014):** Algorithmic Complexity Comparison under Distance Constraints.
+   - **Case 3 (p024):** Consistent Agreement (Server Request Window Counter).
+   - **Case 4 (p028):** Severe Position Bias Flip (Maximum Strong Pair XOR).
 5. **Benchmark Visualizer:** Live interactive tabs displaying all publication figures (Figs 1–5), numerical tables, and findings.
 
 ---
@@ -154,10 +158,21 @@ The slide deck is provided in three production-ready formats:
 
 ## 📊 Step-by-Step Pipeline Reproduction
 
-### 1. Data Sampling & Perturbation (P2)
+You can run the entire pipeline end-to-end with the master shell script:
+```bash
+# Automated end-to-end run (sampling -> batch runs -> metrics -> tables -> plots)
+bash scripts/run_all.sh
+```
+
+Or execute individual stages:
+
+### 1. Data Sampling, Statistics & Perturbation (P2)
 ```bash
 # Sample 150 balanced pairs from CodeJudgeBench (seed 42)
 python -m src.sample_data
+
+# Compute dataset statistics (lines of code, generator distribution, difficulty)
+python -m src.data_stats
 
 # Create AST-equivalent comment-padded pairs for Exp 2
 python -m src.perturb
@@ -182,6 +197,9 @@ python -m src.run_experiment --exp exp4c --model 3b --backend vllm
 # Calculate statistical metrics, Wilson CIs, and McNemar significance
 python -m src.metrics
 
+# Generate LaTeX and Markdown benchmark tables (Tables 0-5)
+python -m src.write_results
+
 # Render publication-grade figures (PNG and PDF)
 python -m src.plots
 ```
@@ -194,11 +212,11 @@ python -m src.plots
 |---|---|
 | **Why only test correctness, and not security or readability?** | Security and readability lack deterministic, executable ground truth in benchmark datasets. By focusing strictly on functional correctness, our ground truth is 100% verified by automated compiler and unit test execution, eliminating human subjective noise. |
 | **Why no human annotations?** | Human annotations introduce subjective variance and inter-annotator disagreement. Test-suite pass/fail is the gold standard for software engineering auditing. |
-| **Are 150 pairs (300 programs) sufficient?** | Yes. We evaluated 2,400 total calls with 95% Wilson confidence intervals. The position gap (+92 pp) is so massive that the statistical effect is overwhelming ($p < 0.001$). Paired comparisons use exact McNemar tests on identical calls. |
+| **Are 150 pairs (300 programs) sufficient?** | Yes for measuring the massive primary position gap (+92 pp, $p < 0.001$). However, for detecting subtle differences between fixes or 3B vs 7B, 150 pairs provide limited statistical power. With $N=150$ pairs, 95% Wilson confidence intervals are approximately $\pm 8$ percentage points per pair-level rate, meaning smaller effect sizes cannot be confirmed or ruled out with high precision. |
 | **Why focus on $\le 7\text{B}$ models?** | Large proprietary models (GPT-4) are too slow, costly, and privacy-invasive for automated local CI/CD pre-commit hooks. Small open models represent the real frontier for local edge deployment. |
-| **How does this differ from "Bias in the Loop"?** | "Bias in the Loop" focused primarily on length bias in 70B+ proprietary models on open-ended text. We provide the first systematic audit of position and leniency bias in lightweight coder models on strict unit-test verified code. |
+| **How does this differ from "Bias in the Loop"?** | "Bias in the Loop" focused primarily on length bias in 70B+ proprietary models on open-ended text. We provide an empirical audit of position and leniency bias in lightweight coder models ($\le 7$B) on strict unit-test verified code. |
 | **Why does False Acceptance Rate (FAR) matter more than accuracy?** | In code auditing, a False Rejection (FRR) is an annoyance (a human re-checks valid code), but a False Acceptance (FAR) is a critical security and functional failure (buggy or vulnerable code silently merges to production). An FAR of 76% means the judge is dangerous. |
-| **Can prompting or sampling fix position bias?** | No. Our experiments showed that debias prompts ($p = 0.453$) and majority voting ($p = 0.555$) had no statistically significant effect. The bias is rooted in structural token attention representations, requiring architectural dual-order averaging. |
+| **Can prompting or sampling fix position bias?** | No. Debias prompts did not improve accuracy (51.7%, $p = 0.453$) and actually increased Position A verdicts from 96.0% to 98.3% ($p = 0.016$), worsening bias. Majority voting (Vote@3 at $T=0.7$) reduced Position A verdicts to 65.7% ($p < 0.001$) but did not improve accuracy (50.3%, $p = 0.555$) or consistency (8.7%, $p = 1.000$). Dual-order averaging acts as an inconsistency filter, raising accuracy on decided pairs to 83.3% at the cost of high abstention (8.0% coverage on 3B). |
 
 ---
 
@@ -206,6 +224,6 @@ python -m src.plots
 
 - **P1 (Setup & Batch Runs):** Colab/Kaggle infrastructure, `src/judge.py`, `src/run_experiment.py`, 2,400 inference calls, Section IV setup text.
 - **P2 (Data & Metrics):** `src/sample_data.py`, `src/perturb.py`, `src/metrics.py`, `src/plots.py`, Tables 1–5, Figures 1–5, Section V results text.
-- **P3 (Demo, Slides & Repo):** `app/app.py` (Gradio), `app/web_demo.py` (standalone server), 3 ready-made demo cases, `demo/DEMO_SCRIPT.md` (3-4 min video guide), 14-slide deck (`slides/index.html`, `slides/presentation.md`, `slides/presentation.tex`), and master `README.md`.
+- **P3 (Demo, Slides & Repo):** `app/app.py` (Gradio), `app/web_demo.py` (standalone server), 4 ready-made demo cases (p015, p062, p024, p028), `demo/DEMO_SCRIPT.md` (3-4 min video guide), 14-slide deck (`slides/index.html`, `slides/presentation.md`, `slides/presentation.tex`), and master `README.md`.
 - **P4 (Report & Synthesis):** IEEE 10-page conference paper draft, system design diagram, limitations analysis, and viva defense synthesis.
 

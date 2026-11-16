@@ -1,15 +1,17 @@
-# Core dependencies for analysis and evaluation
+# Core dependencies for analysis, metrics, and data sampling
 matplotlib>=3.7.0
 numpy>=1.24.0
 scipy>=1.10.0
+datasets>=2.14.0
 
 # Interactive demo app
 gradio>=4.0.0
 
-# LLM inference backends (for Colab/Kaggle batch runs)
-torch>=2.1.0
-transformers>=4.40.0
-accelerate>=0.28.0
+# LLM batch inference backends (Optional for Colab/Kaggle GPU batch runs)
+# Uncomment below when running full benchmark batch pipelines on GPU:
+# torch>=2.1.0
+# transformers>=4.40.0
+# accelerate>=0.28.0
 
 # Optional: Quantization & vLLM (Linux/Colab with GPU)
 # bitsandbytes>=0.43.0

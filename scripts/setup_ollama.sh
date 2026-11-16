@@ -35,12 +35,21 @@ ollama pull "${MODEL_TAG}"
 
 # 4. Verify model with a test prompt
 echo "[*] Testing model inference with a dry run..."
-RESPONSE=$(curl -s http://localhost:11434/api/generate -d "{
+RAW_OUTPUT=$(curl -s http://localhost:11434/api/generate -d "{
   \"model\": \"${MODEL_TAG}\",
   \"prompt\": \"Output only the word TEST:\",
   \"stream\": false
-}" | grep -o '"response":"[^"]*"' || echo "")
+}")
 
-echo "[✓] Ollama verification complete! Response received."
+RESPONSE=$(echo "$RAW_OUTPUT" | grep -o '"response":"[^"]*"' | head -n 1 || echo "")
+
+if [ -z "$RESPONSE" ] || [ "$RESPONSE" = '""' ]; then
+    echo "[!] Ollama verification failed: empty or invalid response received from '${MODEL_TAG}'."
+    echo "    Raw server output: ${RAW_OUTPUT}"
+    echo "    Please verify that Ollama is healthy and '${MODEL_TAG}' is loaded properly."
+    exit 1
+fi
+
+echo "[✓] Ollama verification complete! Response received: ${RESPONSE}"
 echo "=== You are ready to run: python -m app.app ==="
 

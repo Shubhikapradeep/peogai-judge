@@ -98,11 +98,10 @@ HTML_PAGE = """<!DOCTYPE html>
     <div class="card">
       <label for="example-select">⚡ Load Benchmark Case</label>
       <select id="example-select" onchange="loadCase()">
-        <option value="0">Example 0 (Live Ollama Baseline): Add Function (Trivial) ──> [DECIDED on Live Ollama]</option>
-        <option value="1">Example 1 (Severe Position Bias Flip): Longest Subsequence Sum (p015) ──> [UNDECIDED]</option>
-        <option value="2">Example 2 (Consistent Agreement): Beautiful Binary String (p062) ──> [DECIDED]</option>
-        <option value="3">Example 3 (Consistent Agreement): Server Request Window (p024) ──> [DECIDED]</option>
-        <option value="4">Example 4 (Position Bias Flip): Min Absolute Difference (p014) ──> [UNDECIDED]</option>
+        <option value="0">Example 1 (Severe Position Bias Flip): Longest Subsequence Sum (p015) ──> [UNDECIDED]</option>
+        <option value="1">Example 2 (Consistent Agreement): Beautiful Binary String (p062) ──> [DECIDED]</option>
+        <option value="2">Example 3 (Consistent Agreement): Server Request Window (p024) ──> [DECIDED]</option>
+        <option value="3">Example 4 (Severe Position Bias Flip): Maximum Strong Pair XOR (p028) ──> [UNDECIDED]</option>
       </select>
       <div id="case-info" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">INIT_INFO</div>
 
@@ -124,9 +123,9 @@ HTML_PAGE = """<!DOCTYPE html>
         <div>
           <label for="backend">Backend Model</label>
           <select id="backend">
-            <option value="ollama">Ollama (Qwen2.5-Coder-3B Local)</option>
-            <option value="benchmark_replay" selected>Benchmark Replay / Offline (3B Empirical)</option>
-            <option value="mock">Mock Backend (Pure Position Bias)</option>
+            <option value="ollama" selected>Ollama (Local Qwen2.5-Coder-3B Live)</option>
+            <option value="benchmark_replay">Benchmark Replay (Offline recorded results - 150 benchmark pairs only)</option>
+            <option value="mock">Mock Backend (Pure Position Bias Simulation)</option>
           </select>
         </div>
         <div>
@@ -167,13 +166,13 @@ HTML_PAGE = """<!DOCTYPE html>
 <!-- TAB 2: RESULTS -->
 <div id="tab-results" class="tab-pane">
   <div class="card" style="margin-bottom:20px;">
-    <h2>Executive Findings from 2,400 Model Evaluations</h2>
+    <h2>Key Findings from 2,400 Model Evaluations</h2>
     <ul style="margin: 14px 20px; line-height: 1.8;">
-      <li><strong>Severe First-Position Bias (Exp 1):</strong> In pairwise evaluation, Qwen2.5-Coder-3B picked Position A in <strong>96.0%</strong> of calls (7B in <strong>91.7%</strong>). When correct code appeared as A, accuracy was <strong>98.7%</strong>; when placed as B, accuracy crashed to <strong>6.7%</strong> (+92.0 pp gap).</li>
-      <li><strong>Widespread Order Disagreement:</strong> Consistency across orders was only <strong>8.0%</strong> for 3B and <strong>15.3%</strong> for 7B. In <strong>138 of 150 pairs (92.0%)</strong>, the 3B model flipped its pick simply because presentation order swapped (AA flip).</li>
-      <li><strong>Dangerous False Acceptance in Pointwise Auditing (Exp 3):</strong> In single-code auditing, 3B exhibited a <strong>76.0% False Acceptance Rate (FAR)</strong> (72.0% for 7B). Leniency bias caused the judge to approve ~79% of all submissions. In production auditing, 3 out of 4 buggy programs would slip past.</li>
-      <li><strong>Order-Averaging is the Only Robust Mitigation (Exp 4a):</strong> Requiring both orders to agree boosts accuracy to <strong>83.3%</strong> (3B) and eliminates position bias by construction, at the cost of coverage (8.0% decided).</li>
-      <li><strong>Prompting & Sampling Fixes Fail (Exp 4b, 4c):</strong> Instructing the model to ignore order did not reduce bias (%A remained 98.3%, p=0.453). Sampling 3 completions at T=0.7 did not improve consistency (p=0.555), proving the bias is <strong>systematic representation bias, not stochastic noise</strong>.</li>
+      <li><strong>Severe First-Position Bias (Exp 1):</strong> In pairwise judging, judges answer A in <strong>96.0%</strong> (3B) and <strong>91.7%</strong> (7B) of calls. When the correct code is A, accuracy is <strong>98.7%</strong> (3B); when placed as B, accuracy drops to <strong>6.7%</strong> (+92.0 pp gap). Overall pairwise accuracy (52.7% 3B, 54.3% 7B) is not significantly better than chance. Rare B answers carry real signal (83.3% right for 3B, p=0.039), but the default letter drowns it out.</li>
+      <li><strong>Low Order Consistency:</strong> In <strong>92.0%</strong> of pairs (138/150) for 3B and <strong>84.7%</strong> (127/150) for 7B, the verdict followed position rather than code. Consistency across orders was only <strong>8.0%</strong> (3B) and <strong>15.3%</strong> (7B).</li>
+      <li><strong>High False Acceptance in Pointwise Auditing (Exp 3):</strong> In single-code evaluation, judges call ~79% of all answers correct, accepting <strong>76.0%</strong> (3B) and <strong>72.0%</strong> (7B) of buggy solutions (FAR). Leniency bias means ~8 in 10 broken solutions pass review.</li>
+      <li><strong>Order-Averaging Acts as an Inconsistency Filter (Exp 4a):</strong> Requiring both orders to agree achieves <strong>83.3%</strong> accuracy on decided pairs for 3B (10 of 12, 95% CI 55–95%) and <strong>78.3%</strong> for 7B, but abstains on <strong>92.0%</strong> (3B) and <strong>84.7%</strong> (7B) of pairs. It catches inconsistency rather than fixing underlying reliability.</li>
+      <li><strong>Prompting and Sampling Mitigations Fail (Exp 4b, 4c):</strong> The debias prompt (Exp 4b) actually increased A answers on 3B (96.0% &rarr; 98.3%, p=0.016) without improving accuracy (51.7%, p=0.453). Majority vote of 3 at T=0.7 (Exp 4c) lowered A answers to 65.7% (p&lt;0.001) but left accuracy at 50.3% (p=0.555 vs greedy) and consistency at 8.7% (p=1.000).</li>
     </ul>
   </div>
 
@@ -229,7 +228,7 @@ Raw JSONL Logs                   Dual-Order Runner
    │                               │
    ▼                               ▼
 Metrics & Plots Engine           Bias Detector &
-(results/metrics.py)             Order-Averaged Filter
+(src/metrics.py)                 Order-Averaged Filter
    │
    ▼
 IEEE Report & Slide Deck
@@ -399,7 +398,7 @@ class DemoHTTPHandler(http.server.BaseHTTPRequestHandler):
                 data.get("problem", ""),
                 data.get("candidate_1", ""),
                 data.get("candidate_2", ""),
-                data.get("backend", "benchmark_replay"),
+                data.get("backend", "ollama"),
                 data.get("prompt_strategy", "pairwise_v1")
             )
 

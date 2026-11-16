@@ -58,10 +58,10 @@ style: |
 
 | Prior Literature | Our Contribution |
 |---|---|
-| Focused primarily on massive closed models (GPT-4, Claude 3.5, 70B+) | **First systematic audit of edge-scale coder LLMs (3B & 7B)** running on modest consumer hardware (M3 Pro). |
+| Focused primarily on massive closed models (GPT-4, Claude 3.5, 70B+) | **Empirical evaluative audit of edge-scale coder LLMs (3B & 7B)** on local consumer hardware. |
 | Relied on subjective human grading or loose NLP metrics | **Ground truth rooted entirely in objective unit-test execution** (no human label noise). |
 | Examined general NLP / chatbot dialogues | **Focused strictly on functional code auditing** under competitive programming constraints. |
-| Assumed prompt fixes work across domains | **Empirically quantified that debias prompts fail**; only dual-order averaging provides provable safety. |
+| Assumed prompt fixes work across domains | **Empirically demonstrated that debias prompts fail**; dual-order averaging acts as an inconsistency filter (retaining 83.3% accuracy on the 8% decided pairs). |
 
 ---
 
@@ -114,7 +114,7 @@ Raw JSONL Logs                   Dual-Order Runner
    │                               │
    ▼                               ▼
 Metrics & Plots Engine           Bias Detector &
-(results/metrics.py)             Order-Averaged Filter
+(src/metrics.py)                 Order-Averaged Filter
    │
    ▼
 IEEE Report & Slide Deck
@@ -146,7 +146,7 @@ IEEE Report & Slide Deck
 - **Scale and Compute:**
   - Total calls: **2,400 judge evaluations** across 8 full experiment runs.
   - Total compute: **1.27 GPU-hours** on a single NVIDIA Tesla T4.
-  - Zero parse failures across all 2,400 calls due to strict formatting constraints.
+  - Zero parse failures across all 2,400 calls.
 
 ---
 
@@ -187,17 +187,17 @@ IEEE Report & Slide Deck
 ## 12. Results: Before and After Fixes
 
 ### Exp 4: Comparison of Position Bias Mitigations
-| Model | Method | Accuracy | Consistency | % A Verdicts | Coverage | McNemar $p$ |
+| Model | Method | Accuracy | Consistency | % A Verdicts | Coverage | $p$ (accuracy) |
 |---|---|---|---|---|---|---|
 | **3B** | Baseline (Exp 1) | 52.7% | 8.0% | 96.0% | 100.0% | — |
 | | **Order Averaging (4a)** | <span class="success">83.3%</span> | <span class="success">100.0%</span> | — | 8.0% | — |
-| | Debias Prompt (4b) | 51.7% | 3.3% | 98.3% | 100.0% | $p = 0.453$ (No effect) |
-| | Majority of 3 (4c) | 50.3% | 8.7% | 65.7% | 100.0% | $p = 0.555$ (No effect) |
+| | Debias Prompt (4b) | 51.7% | 3.3% | 98.3% | 100.0% | $p = 0.453$ |
+| | Majority of 3 (4c) | 50.3% | 8.7% | 65.7% | 100.0% | $p = 0.555$ |
 | **7B** | Baseline (Exp 1) | 54.3% | 15.3% | 91.7% | 100.0% | — |
 | | **Order Averaging (4a)** | <span class="success">78.3%</span> | <span class="success">100.0%</span> | — | 15.3% | — |
-| | Debias Prompt (4b) | 53.0% | 11.3% | 93.7% | 100.0% | $p = 0.289$ (No effect) |
+| | Debias Prompt (4b) | 53.0% | 11.3% | 93.7% | 100.0% | $p = 0.289$ |
 
-- **Key Takeaway:** Prompting and sampling cannot overcome structural token representation bias. **Only dual-order averaging provides algorithmic protection.**
+- **Key Takeaway:** Debias prompt actually increased Position A choices (96.0% $\rightarrow$ 98.3%, $p=0.016$) with no accuracy change ($p=0.453$). Majority voting dropped A choices to 65.7% ($p<0.001$) but did not improve accuracy ($p=0.555$) or consistency (8.7%, $p=1.000$). Dual-order averaging serves as an inconsistency filter, raising accuracy on decided pairs to 83.3% while abstaining on 92.0% of pairs.
 
 ---
 
@@ -206,12 +206,13 @@ IEEE Report & Slide Deck
 - **Finding 1 (Position Bias):** 3B voted A in 96.0% and 7B in 91.7% of calls; overall accuracy (52.7% / 54.3%) is not better than chance. Rare B votes carry true signal (83.3% right on 3B, $p=0.039$).
 - **Finding 2 (Pointwise Leniency):** 3B accepts 76.0% and 7B accepts 72.0% of buggy code (FAR), approving ~79% of all submissions.
 - **Finding 3 (Scale Comparison):** 7B is less position-biased (91.7% vs 96.0% A, $p=0.011$), but no more accurate (54.3% vs 52.7%, $p=0.405$).
-- **Finding 4 (Fixes Fail):** Debias prompt worsened 3B bias (98.3% A, $p=0.016$); vote@3 spread votes without accuracy gain (50.3%, $p=0.555$). Only order-averaging ensures safety (83.3% acc, 8.0% coverage).
-- **Finding 5 (Verbosity Padding):** Comment padding on flawed code only boosted wins in position A (93.3% $\rightarrow$ 99.3%, $p=0.004$) but dropped to 0% in position B, proving comments only amplify position bias.
+- **Finding 4 (Fixes Fail):** Debias prompt worsened 3B bias (98.3% A, $p=0.016$); vote@3 spread votes without accuracy gain (50.3%, $p=0.555$). Order-averaging acts as an inconsistency filter (83.3% acc, 8.0% coverage).
+- **Finding 5 (Verbosity Padding):** Comment padding on flawed code only boosted wins in position A (93.3% $\rightarrow$ 99.3%, $p=0.004$) while position B dropped (1.3% $\rightarrow$ 0%, $p=0.500$; overall shift 47.3% $\rightarrow$ 49.7%, $p=0.065$ not significant), suggesting comments amplify presentation order rather than indicating semantic preference.
 - **Limitations:**
-  - Difficulty labels in CodeJudgeBench disagree across generator splits for 82% of shared problems.
-  - Capped at 7B parameter models; evaluated on Python competitive programming.
-  - Single-turn zero-shot code auditing scope.
+  - **Exp 2 Length Confound:** Comment padding made the incorrect candidate longer in 127 of 150 pairs.
+  - **Statistical Power on Small Shifts:** With $N=150$ pairs, 95% CIs are approximately $\pm 8$ percentage points per pair-level rate; sufficient for the massive +92 pp position gap, but underpowered for subtle differences.
+  - **Single Prompt Template:** Evaluated one prompt wording per task format; sensitivity to prompt variations remains unmeasured.
+  - **Difficulty Noise & Scope:** Difficulty labels in CodeJudgeBench disagree across generator splits for 82% of shared problems; evaluated on Python competitive programming capped at $\le 7$B parameters.
 
 ---
 
@@ -225,7 +226,8 @@ IEEE Report & Slide Deck
 - **Ready-Made Benchmark Cases:**
   - *Example 1 (p015):* Severe Position Bias Flip (AA Flip on DP Subsequence Sum).
   - *Example 2 (p062):* Consistent Correct Decision (Greedy $O(N)$ vs DP $O(N^2)$).
-  - *Example 3 (p014):* Algorithmic Complexity Comparison under Distance Constraints.
+  - *Example 3 (p024):* Consistent Correct Decision (Server Request Window Counter).
+  - *Example 4 (p028):* Severe Position Bias Flip (Maximum Strong Pair XOR).
 - **GitHub Repository Deliverables:** Fully reproducible code, prompts, raw logs, figures, and IEEE report draft.
 
 ---
