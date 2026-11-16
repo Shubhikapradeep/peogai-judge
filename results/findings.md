@@ -4,10 +4,10 @@ Effects are called significant only when p < 0.05. Re-run the script after any n
 
 ## In one line each
 
-1. In pairwise judging the judges answer A in 96% (3B) and 92% (7B) of calls, and their accuracy (53% and 54%) is not significantly better than chance.
-2. In pointwise judging they call 79% (3B) and 78% (7B) of answers correct and accept 76% and 72% of buggy solutions.
+1. In pairwise judging the judges answer A in 96% (3B) and 92% (7B) of calls, and their accuracy (53% for 3B and 54% for 7B) is not significantly better than chance. Their rare answers against that default are usually right.
+2. In pointwise judging they call 79% (3B) and 78% (7B) of answers correct and accept 76% (3B) and 72% (7B) of buggy solutions.
 3. The 7B judge is less position-biased than the 3B judge, but no more accurate.
-4. None of the fixes makes the judge reliable: order averaging decides only 8% and 15% of pairs, the debias prompt makes the 3B judge more biased and majority voting spreads the verdicts without improving accuracy.
+4. None of the fixes makes the judge reliable: order averaging decides only 8% (3B) and 15% (7B) of pairs, the debias prompt makes the 3B judge more biased and majority voting (3B) spreads the verdicts without improving accuracy.
 5. Padding the wrong answer with comments only strengthens the 3B judge's default to A: it does not prefer the padded answer when it is shown as B.
 
 ## With the numbers
