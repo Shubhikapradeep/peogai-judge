@@ -1,52 +1,29 @@
-% ---- IV. Experimental Setup (P1) -- target ~0.5 page ----
-% Fill every \tbd{} from `python -m src.setup_summary` and the smoke-test notes.
-\newcommand{\tbd}[1]{\textcolor{red}{[#1]}}
-
+% ---- IV. Experimental Setup (P1) -- FINAL, matches Overleaf ----
 \section{Experimental Setup}
-\label{sec:setup}
+\textbf{Hardware.} All batch experiments ran on Google Colab with a single NVIDIA Tesla T4 (16\,GB) GPU in one session. The live demo runs Qwen2.5-Coder-3B-Instruct locally on an Apple MacBook Pro (M3 Pro) through Ollama, with no GPU server.
 
-\textbf{Hardware.} All batch experiments ran on Google Colab with a single NVIDIA \tbd{T4, 16\,GB} GPU
-(\tbd{Kaggle P100/T4 was used for \emph{N} sessions when Colab had no GPU free}). The live demo runs
-Qwen2.5-Coder-3B-Instruct locally on an Apple MacBook Pro (M3 Pro) through Ollama
-(\tbd{Q4\_K\_M} GGUF build), with no GPU server.
+\textbf{Models and inference.} Both judges come from the same family, so that scale is the only variable: Qwen2.5-Coder-3B-Instruct in fp16 and Qwen2.5-Coder-7B-Instruct in 4-bit (the official AWQ checkpoint). Inference used vLLM. Inputs use each model's chat template with a fixed system message. The context window is set to 12{,}288 tokens; the longest pair is about 7k tokens, so no input is truncated.
 
-\textbf{Models.} We evaluate two open-weight judges from the same family so that scale is the only
-variable: Qwen2.5-Coder-3B-Instruct in fp16 and Qwen2.5-Coder-7B-Instruct in 4-bit
-(\tbd{AWQ via vLLM \emph{or} NF4 via bitsandbytes}). Inference used \tbd{vLLM \emph{x.y} / Hugging Face
-Transformers \emph{x.y}}. Inputs use each model's chat template with a fixed system message, and the context window is capped at \tbd{8{,}192} tokens.
-\tbd{\emph{k}} of 150 problems exceeded this cap and were truncated.
+\textbf{Decoding and parsing.} Experiments 1, 2, 3 and 4b use greedy decoding. Experiment 4c samples three completions at temperature 0.7 (top-$p$ 0.95, seed 42) and takes the majority; a tie counts as no verdict. Output is limited to 16 new tokens, since every prompt asks for a single token. A rule-based parser maps each output to a verdict; outputs it cannot map count as parse failures (none occurred in any run).
 
-\textbf{Decoding.} Experiments 1, 2, 3 and 4b use greedy decoding (temperature 0). Experiment 4c samples three
-completions at temperature 0.7 (top-$p$ 0.95, seed 42) and takes the majority verdict. Output is limited to
-16 new tokens because every prompt asks for a single token (\texttt{A}/\texttt{B} or
-\texttt{correct}/\texttt{incorrect}). A rule-based parser maps outputs to verdicts. Outputs it cannot map
-are counted as parse failures and scored as wrong, not dropped.
-
-\textbf{Order control.} Every pairwise item is judged twice, once with the correct answer as A and once
-as B. The data therefore have no built-in order bias, and position bias can be measured directly.
-
-\textbf{Scale and cost.} Table~\ref{tab:runs} lists the runs. In total we made \tbd{N} judge calls
-(\tbd{M} generations including the 3$\times$ samples of Exp.~4c) in \tbd{H} GPU-hours. The mean latency
-per call was \tbd{x.xx}\,s for the 3B model and \tbd{x.xx}\,s for the 7B model. The runner writes
-results to persistent storage after every 10 calls and resumes after interruptions. A run that
-spanned several sessions therefore still covers every item exactly once.
+\textbf{Scale and cost.} Table~\ref{tab:runs} lists every run. In total we made 2{,}400 judge calls (3{,}000 generations including the three samples per call in Exp.~4c) in 1.27 GPU-hours. Mean latency per call was 1.6\,s for the 3B judge and 2.5\,s for the 7B judge. The runner saves results to persistent storage every 10 calls and resumes after interruptions, so a run spread over several Colab sessions still covers each item exactly once.
 
 \begin{table}[t]
 \centering
-\caption{Judge runs. Calls count both orders for pairwise experiments.}
+\caption{Judge runs. Pairwise calls count both orders.}
 \label{tab:runs}
 \begin{tabular}{llrrr}
-\hline
+\toprule
 Exp. & Judge & Calls & Time (min) & s/call \\
-\hline
-1 Pairwise        & 3B & 300 & \tbd{} & \tbd{} \\
-1 Pairwise        & 7B & 300 & \tbd{} & \tbd{} \\
-3 Pointwise       & 3B & 300 & \tbd{} & \tbd{} \\
-3 Pointwise       & 7B & 300 & \tbd{} & \tbd{} \\
-4b Debias prompt  & 3B & 300 & \tbd{} & \tbd{} \\
-4b Debias prompt  & 7B & 300 & \tbd{} & \tbd{} \\
-4c Vote@3         & 3B & 300 ($\times$3) & \tbd{} & \tbd{} \\
-2 Verbosity       & 3B & 300 & \tbd{} & \tbd{} \\
-\hline
+\midrule
+1 Pairwise       & 3B & 300 & 8.5 & 1.71 \\
+1 Pairwise       & 7B & 300 & 15.2 & 3.04 \\
+3 Pointwise      & 3B & 300 & 3.8 & 0.75 \\
+3 Pointwise      & 7B & 300 & 6.8 & 1.36 \\
+4b Debias        & 3B & 300 & 8.6 & 1.71 \\
+4b Debias        & 7B & 300 & 15.2 & 3.04 \\
+4c Vote@3        & 3B & 300 ($\times$3) & 8.6 & 1.72 \\
+2 Verbosity      & 3B & 300 & 9.6 & 1.93 \\
+\bottomrule
 \end{tabular}
 \end{table}
